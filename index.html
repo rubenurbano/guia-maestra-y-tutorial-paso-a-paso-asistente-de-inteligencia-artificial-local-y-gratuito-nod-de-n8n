@@ -1,0 +1,3207 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guía Maestra: Asistente de IA Local y Gratuito Nod de n8n by Rubén Sbarsky</title>
+  <style>
+    /* ==========================================================================
+       DESIGN TOKENS Y VARIABLES DE TEMA (CLEAN CODE & PALETA PREMIUM)
+       ========================================================================== */
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-card: #0f172a;
+      --bg-elevated: #162038;
+      --blue-highlight: #1e3a5f;
+      --border-subtle: rgba(56, 189, 248, 0.22);
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --accent-primary: #38bdf8;
+      --accent-secondary: #818cf8;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --base-font-size: 16px;
+      --nav-height: 58px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.45);
+    }
+
+    html.light {
+      --bg-primary: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-elevated: #e2e8f0;
+      --blue-highlight: #dbeafe;
+      --border-subtle: rgba(30, 58, 95, 0.2);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --accent-primary: #0284c7;
+      --accent-secondary: #4f46e5;
+      --shadow-card: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+    }
+
+    /* ==========================================================================
+       RESET Y ESTRUCTURA BASE MOBILE-FIRST (GALAXY A02s 360px+)
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: var(--base-font-size);
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.65;
+      overflow-x: hidden;
+      padding-top: calc(var(--nav-height) + 4px);
+      padding-bottom: 5rem;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* Barra de progreso de lectura */
+    #reading-progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-emerald));
+      z-index: 60;
+      transition: width 0.1s linear;
+    }
+
+    /* ==========================================================================
+       BARRA SUPERIOR FIJA Y NAVEGACIÓN POR PESTAÑAS
+       ========================================================================== */
+    #top-navbar {
+      position: fixed;
+      top: 4px;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background-color: rgba(10, 14, 26, 0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      z-index: 40;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    html.light #top-navbar {
+      background-color: rgba(255, 255, 255, 0.94);
+    }
+
+    #top-navbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav-brand-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #071124;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      overflow: hidden;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 42px;
+      padding: 0 14px;
+      border-radius: 9999px;
+      border: 1px solid var(--border-subtle);
+      background-color: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .chip:hover, .chip:focus-visible {
+      border-color: var(--accent-primary);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+    }
+
+    .chip.active {
+      background: linear-gradient(135deg, var(--blue-highlight), rgba(56, 189, 248, 0.25));
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      box-shadow: 0 2px 10px rgba(56, 189, 248, 0.2);
+    }
+
+    /* ==========================================================================
+       PANEL LATERAL DE ÍNDICE (MENÚ SÁNDWICH)
+       ========================================================================== */
+    #dr {
+      position: fixed;
+      top: calc(var(--nav-height) + 4px);
+      left: 0;
+      bottom: 0;
+      width: min(330px, 88vw);
+      background: #0f172a;
+      border-right: 1px solid #1e3a5f;
+      transform: translateX(-105%);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 45;
+      overflow-y: auto;
+      padding: 12px;
+      box-shadow: 10px 0 30px rgba(0, 0, 0, 0.6);
+    }
+
+    html.light #dr {
+      background: #ffffff;
+      border-right: 1px solid #cbd5e1;
+    }
+
+    #dr.o {
+      transform: none;
+    }
+
+    .drawer-header {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-primary);
+      font-weight: 700;
+      padding: 6px 12px 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 8px;
+    }
+
+    #dr a {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: var(--text-primary);
+      cursor: pointer;
+      min-height: 44px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      margin-bottom: 4px;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    #dr a:hover {
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    #dr a.on {
+      background: rgba(56, 189, 248, 0.18);
+      color: var(--accent-primary);
+      font-weight: 700;
+      border-left: 3px solid var(--accent-primary);
+    }
+
+    #drawer-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 42;
+    }
+
+    #drawer-backdrop.visible {
+      display: block;
+    }
+
+    /* ==========================================================================
+       BARRA DE HERRAMIENTAS INTERACTIVA (BUSCADOR, FUENTE, TEMA, PDF)
+       ========================================================================== */
+    #utility-toolbar {
+      max-width: 1020px;
+      margin: 12px auto 0;
+      padding: 0 12px;
+    }
+
+    .toolbar-inner {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .search-box-wrapper {
+      position: relative;
+      flex: 1 1 200px;
+      min-width: 180px;
+    }
+
+    #global-search-input {
+      width: 100%;
+      min-height: 42px;
+      padding: 8px 36px 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    #global-search-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+    }
+
+    #clear-search-btn {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 6px;
+      display: none;
+      font-size: 1rem;
+    }
+
+    .tool-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .tool-btn {
+      min-height: 42px;
+      min-width: 42px;
+      padding: 0 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background-color: var(--bg-elevated);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+
+    .tool-btn:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    #search-results-panel {
+      display: none;
+      margin-top: 10px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--accent-primary);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .search-result-item {
+      padding: 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .search-result-item:hover {
+      background-color: rgba(56, 189, 248, 0.12);
+    }
+
+    .search-result-tab {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      text-transform: uppercase;
+    }
+
+    /* ==========================================================================
+       CONTENEDOR PRINCIPAL Y PESTAÑAS (SECCIONES)
+       ========================================================================== */
+    main {
+      max-width: 1020px;
+      margin: 16px auto 0;
+      padding: 0 12px;
+    }
+
+    .tab-section {
+      display: none;
+      animation: fadeInSection 0.25s ease;
+    }
+
+    .tab-section.active {
+      display: block;
+    }
+
+    @keyframes fadeInSection {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       TARJETAS, TIPOGRAFÍA Y COMPONENTES DE APRENDIZAJE
+       ========================================================================== */
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px 18px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-card);
+    }
+
+    @media (min-width: 640px) {
+      .card {
+        padding: 28px;
+      }
+    }
+
+    .hero-header-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .hero-inline-logo {
+      flex-shrink: 0;
+      width: 54px;
+      height: 54px;
+      border-radius: 12px;
+      background: #071124;
+      border: 1.5px solid rgba(56, 189, 248, 0.55);
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: clamp(1.35rem, 4.5vw, 2.15rem);
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--text-primary);
+    }
+
+    .author-badge-inline {
+      display: inline-block;
+      color: var(--accent-primary);
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: clamp(1.25rem, 3.8vw, 1.7rem);
+      font-weight: 800;
+      color: var(--accent-primary);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 10px;
+    }
+
+    h3 {
+      font-size: clamp(1.08rem, 3.2vw, 1.3rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 18px 0 10px;
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-secondary);
+      margin: 14px 0 6px;
+    }
+
+    p {
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+
+    ul, ol {
+      margin: 0 0 14px 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    strong {
+      color: var(--accent-primary);
+      font-weight: 700;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      background-color: var(--blue-highlight);
+      color: var(--accent-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .badge-emerald {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .badge-amber {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: var(--accent-amber);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .badge-rose {
+      background-color: rgba(244, 63, 94, 0.15);
+      color: var(--accent-rose);
+      border-color: rgba(244, 63, 94, 0.35);
+    }
+
+    /* Callouts pedagógicos */
+    .callout {
+      border-left: 4px solid var(--accent-primary);
+      background-color: rgba(30, 58, 95, 0.32);
+      padding: 14px 16px;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      margin: 14px 0;
+    }
+
+    html.light .callout {
+      background-color: #eff6ff;
+    }
+
+    .callout.warning {
+      border-left-color: var(--accent-amber);
+      background-color: rgba(245, 158, 11, 0.1);
+    }
+
+    .callout.danger {
+      border-left-color: var(--accent-rose);
+      background-color: rgba(244, 63, 94, 0.1);
+    }
+
+    .callout.success {
+      border-left-color: var(--accent-emerald);
+      background-color: rgba(16, 185, 129, 0.1);
+    }
+
+    /* Bloques de Código, Diagramas ASCII y Prompts Copiables */
+    .copy-block-wrapper {
+      background-color: #060913;
+      border: 1px solid #1e3a5f;
+      border-radius: var(--radius-md);
+      margin: 14px 0;
+      overflow: hidden;
+    }
+
+    html.light .copy-block-wrapper {
+      background-color: #1e293b;
+    }
+
+    .copy-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 12px;
+      background-color: #0f172a;
+      border-bottom: 1px solid #1e3a5f;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+
+    .copy-btn {
+      min-height: 36px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      background-color: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background-color: #38bdf8;
+      color: #0a0e1a;
+    }
+
+    .copy-content {
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.55;
+    }
+
+    .prompt-text {
+      font-family: var(--font-sans);
+      font-style: italic;
+      font-size: 0.95rem;
+      color: #f8fafc;
+    }
+
+    /* Diagrama de arquitectura responsive */
+    .arch-diagram {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      line-height: 1.4;
+      background-color: #050811;
+      color: #38bdf8;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid #1e3a5f;
+      overflow-x: auto;
+      white-space: pre;
+      margin: 14px 0;
+    }
+
+    /* Tablas adaptables */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      margin: 14px 0;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    th {
+      background-color: var(--blue-highlight);
+      color: var(--accent-primary);
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ==========================================================================
+       CONTENEDOR SVG HERO ANIMADO (4:5 EN MÓVIL, ADAPTABLE EN ESCRITORIO)
+       ========================================================================== */
+    .svg-hero-frame {
+      width: 100%;
+      max-width: 540px;
+      margin: 16px auto 22px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1.5px solid rgba(56, 189, 248, 0.38);
+      background: radial-gradient(circle at 50% 45%, #111c36 0%, #070b14 100%);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 24px rgba(56, 189, 248, 0.15);
+      position: relative;
+    }
+
+    .svg-hero-slot {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (min-width: 768px) {
+      .svg-hero-frame {
+        max-width: 620px;
+      }
+      .svg-hero-slot {
+        aspect-ratio: 5 / 4;
+      }
+    }
+
+    .svg-hero-slot svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .svg-controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background-color: rgba(15, 23, 42, 0.92);
+      border-top: 1px solid var(--border-subtle);
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    /* Animaciones SVG vectoriales multicapa */
+    @keyframes orbitSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes orbitReverse {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+
+    @keyframes pulseCore {
+      0%, 100% { transform: scale(1); opacity: 0.92; }
+      50% { transform: scale(1.06); opacity: 1; }
+    }
+
+    @keyframes dashFlow {
+      to { stroke-dashoffset: -48; }
+    }
+
+    @keyframes floatNode {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-7px); }
+    }
+
+    @keyframes shieldScan {
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 0.95; }
+    }
+
+    .svg-orbit-cw {
+      transform-origin: 250px 260px;
+      animation: orbitSlow 28s linear infinite;
+    }
+
+    .svg-orbit-ccw {
+      transform-origin: 250px 260px;
+      animation: orbitReverse 20s linear infinite;
+    }
+
+    .svg-core-pulse {
+      transform-origin: 250px 260px;
+      animation: pulseCore 3.6s ease-in-out infinite;
+    }
+
+    .svg-data-stream {
+      stroke-dasharray: 8 8;
+      animation: dashFlow 2.2s linear infinite;
+    }
+
+    .svg-float-a {
+      animation: floatNode 4.2s ease-in-out infinite;
+    }
+
+    .svg-float-b {
+      animation: floatNode 5.1s ease-in-out infinite 1.1s;
+    }
+
+    .svg-shield-glow {
+      animation: shieldScan 3s ease-in-out infinite;
+    }
+
+    .svg-paused * {
+      animation-play-state: paused !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .svg-orbit-cw, .svg-orbit-ccw, .svg-core-pulse, .svg-data-stream, .svg-float-a, .svg-float-b, .svg-shield-glow {
+        animation: none !important;
+      }
+    }
+
+    /* ==========================================================================
+       ACORDEONES Y PREGUNTAS FRECUENTES (Q&A)
+       ========================================================================== */
+    .qa-controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .qa-btn-action {
+      min-height: 44px;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--accent-primary);
+      background-color: var(--blue-highlight);
+      color: var(--accent-primary);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .qa-btn-action:hover {
+      background-color: var(--accent-primary);
+      color: #0a0e1a;
+    }
+
+    details.qa-item {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    details.qa-item[open] {
+      border-color: var(--accent-primary);
+    }
+
+    details.qa-item summary {
+      padding: 14px 16px;
+      min-height: 48px;
+      font-weight: 700;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      user-select: none;
+    }
+
+    details.qa-item summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.qa-item summary::after {
+      content: "+";
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--accent-primary);
+      flex-shrink: 0;
+    }
+
+    details.qa-item[open] summary::after {
+      content: "−";
+    }
+
+    .qa-answer {
+      padding: 0 16px 16px;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 12px;
+      color: var(--text-primary);
+    }
+
+    /* ==========================================================================
+       ENLACES EXTERNOS CON BOTÓN OBLIGATORIO "ABRIR ENLACE EN NUEVA VENTANA"
+       ========================================================================== */
+    .source-link-card {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @media (min-width: 640px) {
+      .source-link-card {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .source-link-info {
+      word-break: break-all;
+    }
+
+    .source-link-title {
+      font-weight: 700;
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .source-link-url {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--accent-primary);
+    }
+
+    .source-link-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-open-new-tab {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 42px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #ffffff;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn-open-new-tab:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+    }
+
+    /* ==========================================================================
+       CHECKLIST INTERACTIVO CON PERSISTENCIA LOCALSTORAGE
+       ========================================================================== */
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      cursor: pointer;
+      min-height: 46px;
+    }
+
+    .checklist-item input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      margin-top: 2px;
+      accent-color: var(--accent-primary);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .checklist-item.checked span {
+      text-decoration: line-through;
+      color: var(--text-secondary);
+    }
+
+    /* ==========================================================================
+       BOTONES DE NAVEGACIÓN INFERIOR ENTRE PESTAÑAS (ANTERIOR / SIGUIENTE)
+       ========================================================================== */
+    .tab-footer-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .nav-step-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--accent-primary);
+      background-color: var(--blue-highlight);
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-step-btn:hover {
+      background-color: var(--accent-primary);
+      color: #0a0e1a;
+    }
+
+    .nav-step-btn.next {
+      margin-left: auto;
+      background: linear-gradient(135deg, #0284c7, #3b82f6);
+      color: #ffffff;
+      border: none;
+    }
+
+    /* ==========================================================================
+       BOTONES FLOTANTES ARRASTRABLES (MOVIBLES): INICIO Y ARRIBA
+       ========================================================================== */
+    .draggable-fab {
+      position: fixed;
+      z-index: 50;
+      min-width: 52px;
+      min-height: 52px;
+      padding: 0 14px;
+      border-radius: 9999px;
+      border: 2px solid var(--accent-primary);
+      background: rgba(15, 23, 42, 0.94);
+      color: #38bdf8;
+      font-weight: 800;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .draggable-fab:active {
+      cursor: grabbing;
+      transform: scale(0.96);
+    }
+
+    #fab-go-home {
+      bottom: 84px;
+      right: 14px;
+    }
+
+    #fab-scroll-top {
+      bottom: 20px;
+      right: 14px;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #ffffff;
+      border-color: #93c5fd;
+    }
+
+    /* Toast de notificación no bloqueante */
+    #toast-notification {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background-color: #0f172a;
+      color: #38bdf8;
+      border: 1px solid #38bdf8;
+      padding: 12px 20px;
+      border-radius: 9999px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      z-index: 80;
+      opacity: 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+      text-align: center;
+      max-width: 90vw;
+    }
+
+    #toast-notification.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* ==========================================================================
+       CRÉDITOS DESTACADOS
+       ========================================================================== */
+    .credits-author-hero {
+      text-align: center;
+      padding: 24px 16px;
+      background: linear-gradient(145deg, rgba(30, 58, 95, 0.45), rgba(15, 23, 42, 0.9));
+      border: 1px solid var(--accent-primary);
+      border-radius: var(--radius-lg);
+      margin: 18px 0;
+    }
+
+    .credits-author-name {
+      font-size: clamp(1.85rem, 6vw, 2.8rem);
+      font-weight: 900;
+      background: linear-gradient(90deg, #38bdf8, #818cf8, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+
+    .credits-author-role {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* ==========================================================================
+       ESTILOS DE IMPRESIÓN Y EXPORTACIÓN PDF (A4 VERTICAL)
+       ========================================================================== */
+    @page {
+      size: A4 portrait;
+      margin: 14mm 12mm 14mm 12mm;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        font-size: 11pt !important;
+      }
+
+      #top-navbar, #dr, #drawer-backdrop, #utility-toolbar, .draggable-fab, .tab-footer-nav, .svg-controls-bar, .copy-btn, .qa-controls-bar, #reading-progress-bar, #toast-notification {
+        display: none !important;
+      }
+
+      .tab-section {
+        display: block !important;
+        opacity: 1 !important;
+        transform: none !important;
+        margin-bottom: 20px !important;
+      }
+
+      .card {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        break-inside: avoid-page;
+      }
+
+      h1, h2, h3, h4, strong, .author-badge-inline, .credits-author-name {
+        color: #0f172a !important;
+        -webkit-text-fill-color: #0f172a !important;
+        background: none !important;
+      }
+
+      p, li, td, th, .qa-answer {
+        color: #1e293b !important;
+      }
+
+      .copy-block-wrapper, .arch-diagram {
+        background: #f8fafc !important;
+        border: 1px solid #94a3b8 !important;
+        color: #0f172a !important;
+      }
+
+      .copy-content, .prompt-text {
+        color: #0f172a !important;
+      }
+
+      .svg-hero-frame {
+        background: #0f172a !important;
+        border: 1px solid #000000 !important;
+        max-width: 380px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra de progreso de lectura -->
+  <div id="reading-progress-bar" aria-hidden="true"></div>
+
+  <!-- ========================================================================
+       PLANTILLA ÚNICA SVG DEL LOGO DE MARCA (PARA REUTILIZAR SIN DUPLICAR)
+       Representación vectorial fiel de "logo tutoriales IA.jpeg"
+       ======================================================================== -->
+  <template id="brand-logo-template">
+    <svg viewBox="0 0 100 100" width="100%" height="100%" role="img" aria-label="Logo Tutoriales IA">
+      <defs>
+        <linearGradient id="shieldGradLogo" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#38bdf8"/>
+          <stop offset="50%" stop-color="#3b82f6"/>
+          <stop offset="100%" stop-color="#a855f7"/>
+        </linearGradient>
+        <linearGradient id="textGradLogo" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#67e8f9"/>
+          <stop offset="100%" stop-color="#2563eb"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="18" fill="#060d1f"/>
+      <!-- Escudo exterior -->
+      <path d="M50 8 C70 8 84 15 84 15 L84 44 C84 67 67 80 50 86 C33 80 16 67 16 44 L16 15 C16 15 30 8 50 8 Z" fill="#0b1730" stroke="url(#shieldGradLogo)" stroke-width="3.5"/>
+      <!-- Hemisferio izquierdo (Cerebro orgánico) -->
+      <path d="M47 23 C38 23 32 28 32 34 C28 36 27 42 30 46 C27 51 29 58 35 60 C37 65 43 67 47 65 Z" fill="none" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M36 33 Q41 35 40 40 M34 45 Q40 44 41 49 M36 55 Q42 54 44 58" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+      <!-- Hemisferio derecho (Circuito neuronal) -->
+      <path d="M53 23 C62 23 68 28 68 34 C72 36 73 42 70 46 C73 51 71 58 65 60 C63 65 57 67 53 65 Z" fill="none" stroke="#a855f7" stroke-width="2.4"/>
+      <circle cx="62" cy="33" r="2.3" fill="#38bdf8"/>
+      <circle cx="66" cy="44" r="2.3" fill="#c084fc"/>
+      <circle cx="61" cy="55" r="2.3" fill="#38bdf8"/>
+      <path d="M53 33 L62 33 M53 44 L66 44 M53 55 L61 55" stroke="#818cf8" stroke-width="1.8"/>
+      <!-- Núcleo central botón Play -->
+      <circle cx="50" cy="44" r="10.5" fill="#071329" stroke="#38bdf8" stroke-width="2.4"/>
+      <polygon points="47.5,39 55.5,44 47.5,49" fill="#67e8f9"/>
+      <!-- Siglas IA -->
+      <text x="50" y="83" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="18" fill="url(#textGradLogo)" stroke="#060d1f" stroke-width="0.6">IA</text>
+      <text x="50" y="94" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="7.5" letter-spacing="0.8" fill="#bae6fd">TUTORIALES</text>
+    </svg>
+  </template>
+
+  <!-- ========================================================================
+       PLANTILLA ÚNICA SVG HERO ANIMADO (NOD: AGENTE LOCAL, VAULT Y SANDBOX)
+       Se extrae a texto y se elimina del DOM al iniciar (Regla 7 Prompt Maestro)
+       ======================================================================== -->
+  <template id="hero-svg-master-template">
+    <svg viewBox="0 0 500 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ilustración animada de Nod de n8n: Agente local de inteligencia artificial con contenedor aislado Docker, Bóveda cifrada Vault, conexión con LLMs y control humano">
+      <defs>
+        <radialGradient id="__UID___bgGlow" cx="50%" cy="46%" r="52%">
+          <stop offset="0%" stop-color="#1e3a8a" stop-opacity="0.55"/>
+          <stop offset="55%" stop-color="#0f172a" stop-opacity="0.85"/>
+          <stop offset="100%" stop-color="#060913" stop-opacity="1"/>
+        </radialGradient>
+        <linearGradient id="__UID___coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#38bdf8"/>
+          <stop offset="50%" stop-color="#6366f1"/>
+          <stop offset="100%" stop-color="#10b981"/>
+        </linearGradient>
+        <linearGradient id="__UID___vaultGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#10b981"/>
+          <stop offset="100%" stop-color="#38bdf8"/>
+        </linearGradient>
+        <filter id="__UID___neonGlow" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur stdDeviation="5" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <pattern id="__UID___techGrid" width="32" height="32" patternUnits="userSpaceOnUse">
+          <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#38bdf8" stroke-opacity="0.07" stroke-width="1"/>
+        </pattern>
+      </defs>
+
+      <!-- Fondo técnico con rejilla -->
+      <rect width="500" height="560" fill="url(#__UID___bgGlow)"/>
+      <rect width="500" height="560" fill="url(#__UID___techGrid)"/>
+
+      <!-- Cabecera visual dentro del lienzo -->
+      <g transform="translate(250, 38)">
+        <rect x="-155" y="-16" width="310" height="30" rx="15" fill="#0f172a" stroke="#38bdf8" stroke-opacity="0.45"/>
+        <circle cx="-136" cy="-1" r="5" fill="#10b981"/>
+        <text x="6" y="4" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="12" font-weight="700" letter-spacing="1.2">ENTORNO LOCAL-FIRST · NOD</text>
+      </g>
+
+      <!-- Perímetro del ordenador anfitrión (Host Machine Sandbox) -->
+      <rect x="34" y="68" width="432" height="384" rx="26" fill="none" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="2" stroke-dasharray="10 6"/>
+      <text x="250" y="88" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="700" letter-spacing="1.5">TU ORDENADOR LOCAL · PRIVACIDAD 100%</text>
+
+      <!-- Anillos orbitales giratorios multicapa -->
+      <g class="svg-orbit-cw">
+        <circle cx="250" cy="260" r="148" fill="none" stroke="#38bdf8" stroke-opacity="0.24" stroke-width="1.5" stroke-dasharray="18 10 4 10"/>
+        <circle cx="250" cy="112" r="6" fill="#38bdf8" filter="url(#__UID___neonGlow)"/>
+        <circle cx="250" cy="408" r="6" fill="#10b981" filter="url(#__UID___neonGlow)"/>
+      </g>
+
+      <g class="svg-orbit-ccw">
+        <circle cx="250" cy="260" r="112" fill="none" stroke="#818cf8" stroke-opacity="0.35" stroke-width="2" stroke-dasharray="28 14"/>
+        <circle cx="138" cy="260" r="5.5" fill="#818cf8"/>
+        <circle cx="362" cy="260" r="5.5" fill="#f59e0b"/>
+      </g>
+
+      <!-- Líneas de flujo de datos animados hacia los 4 módulos periféricos -->
+      <line x1="185" y1="205" x2="115" y2="155" stroke="#38bdf8" stroke-width="2.5" class="svg-data-stream"/>
+      <line x1="315" y1="205" x2="385" y2="155" stroke="#10b981" stroke-width="2.5" class="svg-data-stream"/>
+      <line x1="185" y1="315" x2="115" y2="365" stroke="#818cf8" stroke-width="2.5" class="svg-data-stream"/>
+      <line x1="315" y1="315" x2="385" y2="365" stroke="#f59e0b" stroke-width="2.5" class="svg-data-stream"/>
+
+      <!-- Núcleo central: Motor NOD (Node.js + Pi Runtime + Trust Gate) -->
+      <g class="svg-core-pulse">
+        <polygon points="250,188 312,224 312,296 250,332 188,296 188,224" fill="#0b132b" stroke="url(#__UID___coreGrad)" stroke-width="4" filter="url(#__UID___neonGlow)"/>
+        <polygon points="250,202 299,230 299,290 250,318 201,290 201,230" fill="#132247" stroke="#38bdf8" stroke-opacity="0.4" stroke-width="1.2"/>
+        <text x="250" y="253" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="24" font-weight="900" letter-spacing="1.5">NOD</text>
+        <text x="250" y="273" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="10.5" font-weight="700">PI RUNTIME</text>
+        <text x="250" y="289" text-anchor="middle" fill="#10b981" font-family="monospace" font-size="9.5" font-weight="700">TRUST GATE ON</text>
+      </g>
+
+      <!-- Módulo 1 (Superior Izquierda): Chromium Sandbox Docker -->
+      <g class="svg-float-a" transform="translate(52, 112)">
+        <rect x="0" y="0" width="122" height="66" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+        <circle cx="16" cy="14" r="3.5" fill="#f43f5e"/>
+        <circle cx="27" cy="14" r="3.5" fill="#f59e0b"/>
+        <circle cx="38" cy="14" r="3.5" fill="#10b981"/>
+        <line x1="0" y1="24" x2="122" y2="24" stroke="#1e3a5f" stroke-width="1.5"/>
+        <text x="61" y="42" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="11" font-weight="700">CHROMIUM</text>
+        <text x="61" y="56" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="9.5">DOCKER SANDBOX</text>
+      </g>
+
+      <!-- Módulo 2 (Superior Derecha): Bóveda Vault (Tecleo Ciego) -->
+      <g class="svg-float-b" transform="translate(326, 112)">
+        <rect x="0" y="0" width="122" height="66" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
+        <rect x="51" y="12" width="20" height="15" rx="3" fill="none" stroke="#10b981" stroke-width="2"/>
+        <path d="M55 12 V8 A6 6 0 0 1 67 8 V12" fill="none" stroke="#10b981" stroke-width="2"/>
+        <text x="61" y="43" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="11" font-weight="700">BÓVEDA VAULT</text>
+        <text x="61" y="57" text-anchor="middle" fill="#10b981" font-family="monospace" font-size="9.5">TECLEO CIEGO</text>
+      </g>
+
+      <!-- Módulo 3 (Inferior Izquierda): PostgreSQL + Memoria -->
+      <g class="svg-float-b" transform="translate(52, 342)">
+        <rect x="0" y="0" width="122" height="66" rx="12" fill="#0f172a" stroke="#818cf8" stroke-width="2"/>
+        <ellipse cx="61" cy="14" rx="16" ry="5" fill="none" stroke="#818cf8" stroke-width="1.8"/>
+        <path d="M45 14 V24 C45 27 77 27 77 24 V14" fill="none" stroke="#818cf8" stroke-width="1.8"/>
+        <text x="61" y="43" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="11" font-weight="700">POSTGRESQL</text>
+        <text x="61" y="57" text-anchor="middle" fill="#a5b4fc" font-family="monospace" font-size="9.5">MEMORIA LOCAL</text>
+      </g>
+
+      <!-- Módulo 4 (Inferior Derecha): Human-in-the-loop (CVV & Aprobación) -->
+      <g class="svg-float-a" transform="translate(326, 342)">
+        <rect x="0" y="0" width="122" height="66" rx="12" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+        <path d="M61 8 L72 13 V21 C72 27 61 31 61 31 C61 31 50 27 50 21 V13 Z" fill="none" stroke="#f59e0b" stroke-width="2" class="svg-shield-glow"/>
+        <text x="61" y="45" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="11" font-weight="700">CONTROL HUMANO</text>
+        <text x="61" y="58" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9.5">CVV + APROBACIÓN</text>
+      </g>
+
+      <!-- Barra inferior de ecosistema conectado -->
+      <g transform="translate(250, 495)">
+        <rect x="-216" y="-24" width="432" height="48" rx="14" fill="#0f172a" stroke="#1e3a5f" stroke-width="1.8"/>
+        <text x="0" y="-4" text-anchor="middle" fill="#e2e8f0" font-family="sans-serif" font-size="11.5" font-weight="700">TELEGRAM · GMAIL · CALENDAR · N8N · MCP</text>
+        <text x="0" y="13" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="10">CLAUDE · OPENAI · GEMINI · OLLAMA (BYOK)</text>
+      </g>
+    </svg>
+  </template>
+
+  <!-- ========================================================================
+       BARRA DE NAVEGACIÓN SUPERIOR FIJA (CON BOTÓN ☰ ÍNDICE COMO PRIMER ELEMENTO)
+       ======================================================================== -->
+  <nav id="top-navbar" aria-label="Navegación principal del tutorial">
+    <button class="chip" id="mb" aria-label="Abrir índice" aria-expanded="false">☰ Índice</button>
+    <div class="nav-brand-logo" id="navbar-logo-slot" title="Tutoriales IA"></div>
+    <button class="chip active" data-tab-target="0">Inicio</button>
+    <button class="chip" data-tab-target="1">Fundamentos y Arquitectura</button>
+    <button class="chip" data-tab-target="2">Instalación y LLMs</button>
+    <button class="chip" data-tab-target="3">Bóveda Vault y Canales</button>
+    <button class="chip" data-tab-target="4">Automatizaciones y Seguridad</button>
+    <button class="chip" data-tab-target="5">10 Casos Prácticos</button>
+    <button class="chip" data-tab-target="6">10 Proyectos y Glosario</button>
+    <button class="chip" data-tab-target="7">33 Preguntas (Q&amp;A)</button>
+    <button class="chip" data-tab-target="8">Errores</button>
+    <button class="chip" data-tab-target="9">Prompts</button>
+    <button class="chip" data-tab-target="10">Fuentes Oficiales</button>
+    <button class="chip" data-tab-target="11">Créditos</button>
+  </nav>
+
+  <!-- Panel lateral desplegable de Índice -->
+  <div id="drawer-backdrop"></div>
+  <aside id="dr" aria-label="Índice completo del tutorial">
+    <div class="drawer-header">Índice del Tutorial</div>
+    <div id="drawer-links-container"></div>
+  </aside>
+
+  <!-- ========================================================================
+       BARRA DE UTILIDADES INTERACTIVAS (BUSCADOR, FUENTE, TEMA, IMPRESIÓN PDF)
+       ======================================================================== -->
+  <section id="utility-toolbar" aria-label="Herramientas de lectura">
+    <div class="toolbar-inner">
+      <div class="search-box-wrapper">
+        <input type="search" id="global-search-input" placeholder="Buscar en todo el tutorial (ej. Vault, CVV, Telegram, Docker)..." aria-label="Buscar en todo el tutorial">
+        <button id="clear-search-btn" type="button" aria-label="Limpiar búsqueda">✕</button>
+      </div>
+      <div class="tool-btn-group">
+        <button class="tool-btn" id="btn-font-dec" type="button" title="Reducir tamaño de letra" aria-label="Reducir tamaño de letra">A−</button>
+        <button class="tool-btn" id="btn-font-inc" type="button" title="Aumentar tamaño de letra" aria-label="Aumentar tamaño de letra">A+</button>
+        <button class="tool-btn" id="btn-theme-toggle" type="button" title="Cambiar entre tema oscuro y claro" aria-label="Cambiar tema">☀️ Claro</button>
+        <button class="tool-btn" id="btn-print-pdf" type="button" title="Imprimir o guardar tutorial en PDF" aria-label="Imprimir o guardar PDF">🖨️ PDF</button>
+      </div>
+    </div>
+    <div id="search-results-panel" role="region" aria-live="polite"></div>
+  </section>
+
+  <!-- ========================================================================
+       CONTENIDO PRINCIPAL DIVIDIDO EN PESTAÑAS INDEPENDIENTES
+       ======================================================================== -->
+  <main id="tutorial-main-content">
+
+    <!-- ======================================================================
+         PESTAÑA 0: INICIO
+         ====================================================================== -->
+    <section class="tab-section active" data-t="Inicio">
+      <article class="card">
+        <div class="hero-header-row">
+          <div class="hero-inline-logo" id="hero-title-logo-slot" title="Logo Tutoriales IA"></div>
+          <h1>Guía Maestra y Tutorial Paso a Paso: Asistente de Inteligencia Artificial Local y Gratuito Nod de n8n <span class="author-badge-inline">by Rubén Sbarsky</span></h1>
+        </div>
+
+        <p>Bienvenido a la guía definitiva sobre <strong>Nod</strong>, el agente personal de inteligencia artificial de código abierto creado por <strong>n8n Labs</strong> bajo licencia <strong>Apache 2.0</strong>. A diferencia de los chatbots tradicionales que se limitan a generar respuestas de texto dentro de una ventana de chat, Nod dispone de su propio entorno de computación y su propio navegador web aislado dentro de tu ordenador para ejecutar tareas reales de principio a fin con privacidad absoluta.</p>
+
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin:14px 0;">
+          <button class="chip" id="ix" type="button">☰ Ver índice completo</button>
+          <span class="badge">Licencia Apache 2.0</span>
+          <span class="badge badge-emerald">100% Local-First</span>
+          <span class="badge badge-amber">Control Human-in-the-loop</span>
+        </div>
+
+        <!-- Contenedor SVG Hero Animado (Instancia 1: Inicio) -->
+        <div class="svg-hero-frame">
+          <div class="svg-hero-slot" id="svg-hero-inicio"></div>
+          <div class="svg-controls-bar">
+            <span>Arquitectura interactiva: Nod Local Agent</span>
+            <button type="button" class="copy-btn svg-pause-toggle" data-target="svg-hero-inicio">⏸ Pausar animación</button>
+          </div>
+        </div>
+
+        <h3>¿Qué aprenderás y qué lograrás con este tutorial?</h3>
+        <p>Este manual está diseñado tanto para usuarios sin experiencia previa en programación como para arquitectos de automatización. Seguirás una ruta progresiva desde los conceptos fundamentales hasta el despliegue en servidor 24/7:</p>
+        <ul>
+          <li><strong>Comprender la filosofía Local-First:</strong> Por qué ejecutar un agente en tu máquina supera en privacidad, ahorro y libertad geográfica a alternativas en la nube como Claude Duet o ChatGPT Dots / Operator.</li>
+          <li><strong>Instalar y configurar Nod paso a paso:</strong> Despliegue en macOS 14+ (Apple Silicon e Intel), Windows 11, Linux x64 (Flatpak) y compilación desde código fuente con Docker y Node.js 24.</li>
+          <li><strong>Proteger tus credenciales y dinero con Vault:</strong> Cómo funciona el tecleo ciego de contraseñas y la barrera obligatoria de autorización en equipo con código <strong>CVV</strong>.</li>
+          <li><strong>Conectar tu ecosistema digital:</strong> Integración con Telegram (mediante QR y comando <code>/start</code>), WhatsApp, Gmail, Google Calendar, Slack, Notion, protocolo <strong>MCP</strong> y flujos de <strong>n8n</strong>.</li>
+          <li><strong>Dominar 10 casos reales y 10 proyectos integradores:</strong> Desde comparar precios de 20 kg de café en tres proveedores mayoristas hasta perseguir facturas impagadas o cancelar pruebas de Canva Pro antes de que te cobren.</li>
+        </ul>
+
+        <h3>Lista de comprobación de progreso personal</h3>
+        <p>Marca cada hito conforme avances. Tu progreso se guarda automáticamente en este navegador:</p>
+        <div id="onboarding-checklist">
+          <label class="checklist-item"><input type="checkbox" data-check-id="chk_1"><span>1. He comprendido qué es Nod y la diferencia entre agente local y asistente en la nube.</span></label>
+          <label class="checklist-item"><input type="checkbox" data-check-id="chk_2"><span>2. He verificado los requisitos de hardware (8-16 GB RAM, Docker) y sistema operativo.</span></label>
+          <label class="checklist-item"><input type="checkbox" data-check-id="chk_3"><span>3. He instalado Nod y vinculado mi clave de API (Claude Sonnet 5, GPT-6.1 Sol, Gemini u Ollama) con límite de gasto mensual.</span></label>
+          <label class="checklist-item"><input type="checkbox" data-check-id="chk_4"><span>4. He registrado mis credenciales de prueba y tarjeta en Vault y enlazado mi bot de Telegram.</span></label>
+          <label class="checklist-item"><input type="checkbox" data-check-id="chk_5"><span>5. He probado al menos un caso práctico y revisado las buenas prácticas de seguridad y Q&amp;A.</span></label>
+        </div>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn next" data-nav-step="1">Siguiente: Fundamentos y Arquitectura →</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         PESTAÑA 1: FUNDAMENTOS Y ARQUITECTURA (MÓDULOS 1 Y 2)
+         ====================================================================== -->
+    <section class="tab-section" data-t="Fundamentos y Arquitectura">
+      <article class="card">
+        <h2>1. Introducción y Fundamentos Conceptuales</h2>
+
+        <h3>1.1. ¿Qué es Nod?</h3>
+        <p><strong>Nod</strong> es un agente de inteligencia artificial personal de código abierto desarrollado y publicado por el equipo de <strong>n8n</strong> a través de <strong>n8n Labs</strong>. A diferencia de los chatbots tradicionales que se limitan a generar respuestas de texto dentro de una ventana de chat, Nod es un agente con capacidades activas de ejecución: cuenta con su propio entorno de computación y su propio navegador web.</p>
+        <p>Esto le permite ejecutar tareas complejas en internet de forma autónoma, tales como iniciar sesión en sitios de comercio electrónico, comparar precios agregando los gastos de envío, tramitar pedidos de suministros, dar de baja servicios antes de que venza un periodo de prueba o realizar el seguimiento de facturas impagadas.</p>
+
+        <h3>1.2. Filosofía de diseño: Agente local vs. Asistentes en la nube corporativa</h3>
+        <p>La mayoría de los asistentes digitales avanzados (como <strong>Claude Duet</strong> o <strong>ChatGPT Dots / Operator</strong>) operan íntegramente en la nube de grandes corporaciones tecnológicas. Este modelo centralizado presenta varias barreras importantes:</p>
+        <ol>
+          <li><strong>Costes recurrentes elevados:</strong> Exigen suscripciones de pago constantes y planes corporativos específicos.</li>
+          <li><strong>Restricciones geográficas y de acceso:</strong> Soluciones como Claude Duet nacieron restringidas a Estados Unidos, mientras que herramientas equivalentes de OpenAI tienen despliegues restringidos en territorio europeo para cuentas individuales.</li>
+          <li><strong>Privacidad y exposición de datos confidenciales:</strong> En los asistentes basados en nube externa, las credenciales, contraseñas, datos bancarios y correspondencia deben circular por servidores remotos de terceros.</li>
+        </ol>
+
+        <div class="callout success">
+          <strong>Arquitectura Local-First:</strong> Nod se instala y vive en el ordenador del usuario. El agente opera dentro de una máquina virtual cerrada dentro de tu propio equipo; sus archivos, su base de datos de memoria, sus registros de navegación y sus inicios de sesión jamás salen de tu máquina. El único intercambio exterior se produce con el proveedor de inteligencia artificial (LLM) que tú elijas para interpretar lenguaje natural y tomar decisiones.
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Característica</th>
+                <th>Nod de n8n</th>
+                <th>Asistentes en Nube (Claude Duet / ChatGPT Dots)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Ubicación de ejecución</strong></td>
+                <td>100 % Local en tu ordenador (Docker Sandbox)</td>
+                <td>Servidores remotos de la corporación</td>
+              </tr>
+              <tr>
+                <td><strong>Licencia y coste del software</strong></td>
+                <td>Gratuito y código abierto (Apache 2.0)</td>
+                <td>Propietario con suscripciones recurrentes elevadas</td>
+              </tr>
+              <tr>
+                <td><strong>Privacidad de contraseñas</strong></td>
+                <td>Cifradas en local (Vault) con tecleo ciego</td>
+                <td>Circulan por infraestructura externa</td>
+              </tr>
+              <tr>
+                <td><strong>Disponibilidad geográfica</strong></td>
+                <td>Global sin bloqueos regionales</td>
+                <td>Restricciones en Europa o planes corporativos</td>
+              </tr>
+              <tr>
+                <td><strong>Elección de modelo IA</strong></td>
+                <td>Libre (Anthropic, OpenAI, Gemini, Ollama, etc.)</td>
+                <td>Atado exclusivamente al modelo del proveedor</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>1.3. Licencia, código abierto y gobernanza</h3>
+        <p>Nod fue liberado por <strong>n8n Labs el 10 de noviembre de 2026</strong> bajo la licencia permisiva <strong>Apache 2.0</strong>. Esto otorga total transparencia y soberanía: cualquier usuario o empresa puede inspeccionar su código, auditar qué procesos ejecuta en segundo plano, modificarlo o crear extensiones sin costes de licencia ni royalties.</p>
+
+        <h3>1.4. Principios rectores: Privacidad, soberanía y control humano (Human-in-the-loop)</h3>
+        <p>El diseño de Nod descansa en dos premisas fundamentales:</p>
+        <ul>
+          <li><strong>No intervención no autorizada:</strong> El agente trabaja de forma proactiva pero pregunta antes de actuar en cualquier situación que implique un cambio irreversible, un envío de correo o un desembolso económico.</li>
+          <li><strong>Aislamiento de credenciales:</strong> La IA nunca ve ni manipula contraseñas en texto claro ni números completos de tarjetas de crédito.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>2. Arquitectura del Sistema y Mecanismos Internos</h2>
+
+        <h3>2.1. Componentes principales del sistema</h3>
+        <p>Nod no es un simple script de Python, sino una plataforma modular construida con estándares modernos de ingeniería:</p>
+        <ul>
+          <li><strong>Servidor central en Node.js 24 y Fastify:</strong> Orquesta la lógica del sistema, los eventos, las políticas de seguridad y la comunicación con el usuario.</li>
+          <li><strong>Motor de runtime Pi:</strong> Framework de agentes especializado (desarrollado por Earendil Works) encargado del ciclo de razonamiento, planificación y llamada a herramientas.</li>
+          <li><strong>PostgreSQL con pg-boss:</strong> Base de datos relacional local embebida que gestiona colas de tareas en segundo plano, programación recurrente (<em>schedules</em>) y persistencia de memoria.</li>
+          <li><strong>Electron:</strong> Empaqueta la interfaz gráfica de usuario en las versiones de escritorio.</li>
+        </ul>
+
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>DIAGRAMA DE ARQUITECTURA INTERNA DE NOD</span>
+            <button type="button" class="copy-btn" data-copy-target="arch-ascii-diagram">📋 Copiar esquema</button>
+          </div>
+          <pre class="arch-diagram" id="arch-ascii-diagram">+-------------------------------------------------------------+
+|                        USUARIO                              |
+|           (App Escritorio · Telegram · WhatsApp)             |
++------------------------------+------------------------------+
+                               |
+                               v
++-------------------------------------------------------------+
+|                      SERVIDOR NOD                           |
+|       Runtime Pi · Comprobación de Seguridad (Trust)        |
+|        Bóveda (Vault) · Memoria Local · Programaciones       |
++---------+--------------------+--------------------+---------+
+          |                    |                    |
+          v                    v                    v
++------------------+  +------------------+  +-----------------+
+|  Workspace Linux |  |    Navegador     |  |   PostgreSQL    |
+| (Sandbox Docker) |  | Chromium Docker  |  |  (pg-boss cola) |
++------------------+  +------------------+  +-----------------+
+          |                    |
+          +----------+---------+
+                     |
+                     v (Tratados como datos, no instrucciones)
++--------------------+----------------------------------------+
+| PROVEEDOR LLM (Tu clave: Anthropic / OpenAI / Gemini / etc.)|
++-------------------------------------------------------------+</pre>
+        </div>
+
+        <h3>2.2. Aislamiento en contenedores: Sandbox y Chromium</h3>
+        <p>Para evitar que un fallo o una instrucción maliciosa afecte a los archivos personales de tu equipo, Nod ejecuta sus tareas web dentro de dos contenedores Docker dedicados:</p>
+        <ol>
+          <li><strong>Contenedor Linux Workspace:</strong> Un entorno aislado de ejecución donde se ejecutan los procesos del sistema operativo sin acceso a tus carpetas personales del disco duro anfitrión.</li>
+          <li><strong>Contenedor Chromium (browser-use):</strong> Una instancia de navegador web controlada por el agente (<em>browser container</em>), optimizada para navegación autónoma y totalmente aislada de tu navegador habitual y tus cookies personales.</li>
+        </ol>
+
+        <h3>2.3. La Bóveda (Vault): Protección de credenciales</h3>
+        <p>La Bóveda o <em>Vault</em> es un almacén de claves cifrado localmente. Cuando Nod debe iniciar sesión en un sitio web (por ejemplo, en un proveedor de suministros o en Canva):</p>
+        <ol>
+          <li>El servidor recupera el usuario y contraseña del Vault local.</li>
+          <li>El propio sistema automatizado teclea los valores directamente en los campos del formulario del navegador.</li>
+          <li>La contraseña <strong>nunca se envía al modelo de lenguaje (LLM)</strong>. El modelo solo recibe el estado de la página web (por ejemplo, "sesión iniciada con éxito").</li>
+        </ol>
+
+        <h3>2.4. Mecanismo de memoria persistente y resistencia a inyecciones</h3>
+        <p>Nod incorpora una memoria semántica configurable en PostgreSQL que almacena directrices de negocio:</p>
+        <ul>
+          <li><strong>Aprendizaje por instrucción directa (Tell it once):</strong> Si le indicas <em>"Anna, y no Bob, es quien gestiona las facturas"</em>, el agente actualiza su base de conocimiento y recordará esa regla en todas las interacciones futuras.</li>
+          <li><strong>Transparencia y edición:</strong> Cada nota de memoria es visible en el panel del usuario, permitiendo editarla, validarla o borrarla a discreción.</li>
+          <li><strong>Resistencia a ataques de inyección (WhisperBench):</strong> En evaluaciones formales como <em>WhisperBench</em>, Nod demostró <strong>0 falsas memorias en 216 pruebas</strong>, asegurando que no aprende hechos erróneos a partir de correos o páginas web no confiables. Solo asimila reglas que provienen de mensajes directos del propio usuario.</li>
+          <li><strong>Precisión de memoria a largo plazo (LongMemEval-S):</strong> Obtuvo una precisión del <strong>93,2 %</strong> en recuperación y retención de memoria operativa.</li>
+        </ul>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn" data-nav-step="0">← Anterior: Inicio</button>
+          <button type="button" class="nav-step-btn next" data-nav-step="2">Siguiente: Instalación y LLMs →</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         PESTAÑA 2: INSTALACIÓN Y LLMS (MÓDULOS 3, 4 Y 5)
+         ====================================================================== -->
+    <section class="tab-section" data-t="Instalación y LLMs">
+      <article class="card">
+        <h2>3. Requisitos del Sistema y Preparación del Entorno</h2>
+
+        <h3>3.1. Requisitos de hardware</h3>
+        <ul>
+          <li><strong>Para uso diario en equipo de escritorio:</strong>
+            <ul>
+              <li><strong>Procesador:</strong> Apple Silicon (M1/M2/M3/M4) o Intel x64 / AMD64 con soporte de virtualización.</li>
+              <li><strong>Memoria RAM:</strong> Mínimo 8 GB (se recomiendan 16 GB para fluidez en la ejecución de contenedores Docker simultáneos).</li>
+              <li><strong>Almacenamiento:</strong> 10 GB de espacio libre para imágenes Docker y base de datos local.</li>
+            </ul>
+          </li>
+          <li><strong>Para operación permanente 24/7:</strong> Se recomienda un equipo dedicado de bajo consumo, como un <strong>Mac mini</strong> o un servidor doméstico ligero (<em>self-hosted</em>) con conexión permanente a internet y corriente eléctrica.</li>
+        </ul>
+
+        <h3>3.2. Sistemas operativos compatibles</h3>
+        <ul>
+          <li><strong>macOS:</strong> Versión 14 (Sonoma) o superior, con soporte nativo para Apple Silicon y binarios específicos para Intel x64.</li>
+          <li><strong>Windows:</strong> Windows 11 (versión previa / <em>preview</em>) con WSL2 y Docker Desktop habilitado.</li>
+          <li><strong>Linux:</strong> Distribuciones modernas de 64 bits (Ubuntu 22.04+, Debian 12, Fedora) en formato Flatpak o despliegue en contenedor.</li>
+        </ul>
+
+        <h3>3.3. Requisitos de software para compilación desde fuente</h3>
+        <ul>
+          <li><strong>Node.js:</strong> Versión 24.21 o superior.</li>
+          <li><strong>pnpm y Corepack:</strong> Gestor de paquetes de alto rendimiento.</li>
+          <li><strong>Docker Engine y Docker Compose:</strong> Para levantar los contenedores del workspace y del navegador Chromium.</li>
+        </ul>
+
+        <h3>3.4. Selección de proveedores de modelos de lenguaje (LLMs)</h3>
+        <p>Nod no incluye un LLM propio, sino que permite conectar el de tu preferencia bajo el modelo <strong>BYOK (Bring Your Own Key)</strong>:</p>
+        <ul>
+          <li><strong>Anthropic Claude:</strong> Modelos recomendados: <strong>Claude Sonnet 5</strong> (equilibrio perfecto entre coste, velocidad y rendimiento) o <strong>Claude Opus 5.5</strong> (máxima precisión en toma de decisiones críticas).</li>
+          <li><strong>OpenAI:</strong> <strong>GPT-6.1 Sol</strong>, GPT-4o, o inicio de sesión directo mediante suscripción de <strong>ChatGPT Plus / Pro</strong> sin necesidad de pagar API aparte.</li>
+          <li><strong>Otros proveedores compatibles:</strong> Google Gemini, OpenRouter, AWS Bedrock, Google Cloud Vertex AI, Microsoft Azure o servidores locales compatibles con API de OpenAI (<strong>vLLM, Ollama</strong>).</li>
+        </ul>
+
+        <div class="callout warning">
+          <strong>Advertencia de seguridad sobre modelos pequeños:</strong> En pruebas de laboratorio de seguridad, modelos de menor tamaño como <strong>Claude Haiku 5.5</strong> cometieron 8 errores de seguridad en 240 acciones (dejando pasar acciones inseguras), mientras que modelos avanzados como <strong>Claude Opus 5.5</strong> o <strong>GPT-6.1 Sol</strong> obtuvieron un <strong>100 % de aciertos (0 fallos)</strong>. Evita modelos ultrapequeños como cerebro principal del agente.
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>4. Instalación y Puesta en Marcha Paso a Paso</h2>
+
+        <h3>4.1. Instalación en macOS (Paso a paso)</h3>
+        <ol>
+          <li><strong>Objetivo:</strong> Instalar Nod en tu Mac y levantar sus contenedores locales.</li>
+          <li><strong>Paso 1:</strong> Accede al portal oficial (<code>https://nod.n8n.io/</code>) o al repositorio de lanzamientos en GitHub (<code>https://github.com/n8n-io/nod/releases</code>).</li>
+          <li><strong>Paso 2:</strong> Descarga el paquete <code>.dmg</code> correspondiente a tu arquitectura (Apple Silicon o Intel <code>nod-x64.dmg</code>).</li>
+          <li><strong>Paso 3:</strong> Abre el archivo descargado y arrastra el icono de <strong>Nod</strong> hacia la carpeta de <strong>Aplicaciones</strong>.</li>
+          <li><strong>Paso 4:</strong> Abre la aplicación desde Aplicaciones y confirma los permisos de seguridad de macOS pulsando en <strong>Abrir</strong> (<em>Open</em>).</li>
+          <li><strong>Paso 5:</strong> En la pantalla inicial de bienvenida, pulsa el botón <strong>Get Started</strong>. Nod inicializará automáticamente el entorno de ejecución, PostgreSQL y los contenedores locales en tu máquina.</li>
+        </ol>
+
+        <h3>4.2. Instalación en Windows 11</h3>
+        <ol>
+          <li>Asegúrate de tener instalado y en ejecución <strong>Docker Desktop</strong> con soporte para contenedores WSL2 activado.</li>
+          <li>Descarga el instalador de vista previa de Windows 11 desde la sección de lanzamientos de GitHub.</li>
+          <li>Ejecuta el asistente de instalación y concede los permisos de cortafuegos solicitados por Windows Defender.</li>
+          <li>Inicia la aplicación para que despliegue el motor interno.</li>
+        </ol>
+
+        <h3>4.3. Instalación en Linux (Flatpak o Binario)</h3>
+        <ol>
+          <li>Si utilizas Flatpak, instala el paquete de vista previa publicado para Linux x64.</li>
+          <li>Concede permisos para que el entorno sandbox pueda comunicarse con el demonio de Docker.</li>
+          <li>Inicia la aplicación gráfica o arranca el servicio correspondiente.</li>
+        </ol>
+
+        <h3>4.4. Instalación avanzada desde código fuente (macOS / Linux)</h3>
+        <p>Para desarrolladores o usuarios que deseen ejecutar la última versión directamente desde terminal sin empaquetado gráfico:</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>BASH · COMPILACIÓN Y ARRANQUE DESDE CÓDIGO FUENTE</span>
+            <button type="button" class="copy-btn" data-copy-target="code-install-source">📋 Copiar comandos</button>
+          </div>
+          <pre class="copy-content" id="code-install-source"># 1. Clonar el repositorio oficial de n8n
+git clone https://github.com/n8n-io/nod.git
+
+# 2. Acceder al directorio del proyecto
+cd nod
+
+# 3. Habilitar el gestor de paquetes moderno
+corepack enable
+
+# 4. Iniciar el entorno (descarga dependencias e inicializa Docker)
+pnpm start</pre>
+        </div>
+
+        <h3>4.5. Configuración para ejecución continua 24/7</h3>
+        <p>Dado que Nod opera en tu máquina física, si cierras la tapa de tu ordenador portátil o el equipo entra en modo de suspensión (<em>sleep mode</em>), el agente interrumpe sus ejecuciones y las tareas programadas (<em>schedules</em>) se pausan.</p>
+        <ul>
+          <li>Despliega Nod en un equipo de sobremesa siempre encendido, como un <strong>Mac mini</strong> o un mini PC doméstico de bajo consumo.</li>
+          <li>Configura en las opciones de energía del sistema operativo que el equipo nunca suspenda la actividad ni los discos cuando esté conectado a la corriente eléctrica.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>5. Configuración Inicial y Enlace de Inteligencia (LLMs)</h2>
+
+        <h3>5.1. Asistente de configuración y contextualización</h3>
+        <p>Tras la instalación, Nod solicita una breve descripción de tu actividad profesional o negocio.</p>
+        <div class="callout">
+          <strong>Ejemplo práctico de perfilado:</strong> Indicar <em>"Llevo Cafés Llorente, un tostador que vende café a bares y restaurantes"</em>. Esto proporciona al agente el contexto semántico necesario para redactar correos comerciales coherentes y buscar productos adecuados a tu sector.
+        </div>
+
+        <h3>5.2. Enlace de la clave de API (API Key)</h3>
+        <ol>
+          <li>Dirígete a la sección de configuración de modelos en el menú lateral (<strong>Settings → Models</strong>).</li>
+          <li>Selecciona tu proveedor de inteligencia artificial (por ejemplo, <strong>Anthropic</strong> o <strong>OpenAI</strong>).</li>
+          <li>Recupera tu clave de API (almacenada de forma segura en tu gestor de contraseñas, como Bitwarden) y pégala en el campo correspondiente.</li>
+          <li>Nod validará la clave y confirmará la conexión exitosa. Recuerda que esta clave se guarda exclusivamente en tu servidor local y jamás se envía a los contenedores web.</li>
+        </ol>
+
+        <h3>5.3. Selección de modelo y fijación de límites de gasto (Spending Limit)</h3>
+        <ul>
+          <li><strong>Selección de modelo por defecto:</strong> Se recomienda seleccionar un modelo equilibrado como <strong>Claude Sonnet 5</strong> para tareas cotidianas.</li>
+          <li><strong>Límite de gasto mensual (Spending Limit):</strong> Establece un techo de presupuesto estricto en dólares o euros (por ejemplo, <strong>$10 USD</strong>). Nod auditará el coste acumulado de cada tarea en tiempo real y detendrá las llamadas a la API si se alcanza dicho umbral.</li>
+        </ul>
+
+        <h3>5.4. Privacidad y desactivación de telemetría</h3>
+        <p>Por defecto, la aplicación puede recopilar datos básicos y anónimos de uso de producto para el equipo de n8n. Para garantizar la máxima privacidad:</p>
+        <ol>
+          <li>Accede a <strong>Settings → Privacy &amp; data</strong>.</li>
+          <li>Desactiva la casilla <strong>Share usage data</strong> para suspender cualquier envío de telemetría hacia los servidores de n8n.</li>
+        </ol>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn" data-nav-step="1">← Anterior: Fundamentos</button>
+          <button type="button" class="nav-step-btn next" data-nav-step="3">Siguiente: Bóveda Vault y Canales →</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         PESTAÑA 3: BÓVEDA VAULT Y CANALES (MÓDULOS 6 Y 7)
+         ====================================================================== -->
+    <section class="tab-section" data-t="Bóveda Vault y Canales">
+      <article class="card">
+        <h2>6. Gestión de Credenciales y Finanzas con Vault (La Bóveda)</h2>
+
+        <h3>6.1. Principio de tecleo ciego sin exposición a la IA</h3>
+        <p>La Bóveda (<strong>Vault</strong>) es la herramienta que permite a Nod navegar en sitios con autenticación sin exponer tus datos secretos. Cuando el agente interactúa con un formulario de inicio de sesión:</p>
+        <ol>
+          <li>El servidor recupera el registro cifrado en tu base de datos local.</li>
+          <li>El entorno del navegador Chromium emula los eventos de teclado directamente en el campo de texto del formulario.</li>
+          <li>La cadena de texto de la contraseña <strong>jamás se transfiere como contexto al prompt del modelo de lenguaje</strong>, evitando cualquier fuga accidental de datos hacia el proveedor del LLM.</li>
+        </ol>
+
+        <h3>6.2. Registro de inicios de sesión de plataformas y proveedores</h3>
+        <ol>
+          <li>Pulsa en el icono de <strong>Vault</strong> (Bóveda) en la barra de herramientas de Nod.</li>
+          <li>Selecciona <strong>Add Login</strong> (Añadir inicio de sesión).</li>
+          <li>Introduce la dirección URL del portal web (por ejemplo, de tus proveedores comerciales de suministros o plataformas SaaS).</li>
+          <li>Escribe el nombre de usuario o correo electrónico y la contraseña correspondiente.</li>
+          <li>Guarda el registro. A partir de ese momento, Nod sabrá qué credencial aplicar cada vez que deba navegar por ese dominio.</li>
+        </ol>
+
+        <h3>6.3. Registro seguro de métodos de pago</h3>
+        <ol>
+          <li>Dentro de Vault, pulsa en la sección de medios de pago y añade una nueva tarjeta.</li>
+          <li>Introduce el nombre del titular (<em>Cardholder Name</em>), el número de la tarjeta y la fecha de caducidad.</li>
+          <li>Guarda la tarjeta en el almacén local cifrado.</li>
+        </ol>
+
+        <h3>6.4. La barrera obligatoria de pago: Autorización en equipo y código CVV</h3>
+        <div class="callout danger">
+          <strong>Regla de Seguridad Inquebrantable (Human-in-the-loop financiero):</strong><br>
+          • Nod puede llenar el carrito de compras, aplicar cupones y rellenar direcciones de envío y facturación.<br>
+          • Al llegar a la pasarela final de pago, el agente <strong>detiene obligatoriamente su ejecución y emite una alerta</strong>.<br>
+          • El pago <strong>únicamente se puede autorizar desde el ordenador físico</strong> donde corre Nod (nunca desde Telegram ni canales remotos).<br>
+          • El usuario debe pulsar manualmente en <strong>Aprobar pago</strong> e introducir en ese instante el código de seguridad de 3 dígitos (<strong>CVV</strong>), que nunca se almacena.
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>7. Conectividad: Canales de Mensajería y Aplicaciones</h2>
+
+        <h3>7.1. Vinculación con Telegram (Canal móvil recomendado)</h3>
+        <p>Telegram es el canal óptimo para interactuar con Nod de forma remota desde el móvil y recibir notificaciones en tiempo real:</p>
+        <ol>
+          <li>En el menú lateral de Nod, dirígete a la sección de <strong>Channels</strong> (Canales).</li>
+          <li>Localiza y selecciona la opción de <strong>Telegram</strong>.</li>
+          <li>Aparecerá un <strong>código QR</strong> y un enlace directo para conectar tu bot privado de Telegram.</li>
+          <li>Abre Telegram en tu teléfono móvil o cliente de escritorio, escanea el QR y envía el comando <code>/start</code> al bot.</li>
+          <li>El sistema confirmará la vinculación y podrás enviarle instrucciones escritas desde cualquier lugar del mundo.</li>
+        </ol>
+
+        <h3>7.2. Vinculación con WhatsApp: Consideraciones técnicas y operativas</h3>
+        <p>Aunque Nod ofrece compatibilidad con WhatsApp, el proceso de vinculación de su API es más complejo administrativamente y más susceptible a variaciones técnicas o bloqueos de sesión respecto a Telegram. Para entornos personales y de pequeña empresa, <strong>Telegram</strong> es la opción recomendada por su estabilidad y simplicidad de configuración.</p>
+
+        <h3>7.3. Integración con Google Workspace (Gmail y Google Calendar)</h3>
+        <ol>
+          <li>En la pestaña de aplicaciones (<strong>Apps</strong>), selecciona <strong>Gmail</strong> o <strong>Google Calendar</strong>.</li>
+          <li>Inicia sesión con tu cuenta de Google a través de la ventana de autorización OAuth y concede los permisos de lectura y redacción de borradores.</li>
+          <li>Una vez conectado, Nod podrá revisar hilos de correo para identificar confirmaciones de pedidos, detectar transferencias bancarias de clientes o leer tu calendario para preparar resúmenes de reuniones.</li>
+        </ol>
+
+        <h3>7.4. Conexión con Slack, Notion y conectores MCP (Model Context Protocol)</h3>
+        <p>Nod soporta la conexión directa con herramientas colaborativas como <strong>Slack</strong> y <strong>Notion</strong>, permitiendo leer bases de datos y canales de equipo. Asimismo, incorpora soporte nativo para el estándar abierto <strong>MCP (Model Context Protocol)</strong>, lo que permite conectar herramientas personalizadas, APIs internas o servidores de datos creados por ti o por la comunidad.</p>
+
+        <h3>7.5. Integración con flujos de trabajo de n8n</h3>
+        <p>Nod es un producto independiente del software de flujos n8n (no requiere tener n8n instalado para funcionar), pero se integra nativamente con él cuando deseas delegar automatizaciones recurrentes:</p>
+        <ol>
+          <li>En el menú de <strong>Apps</strong>, selecciona <strong>n8n</strong>.</li>
+          <li>Introduce la dirección URL de tu instancia de n8n (local o cloud) y tu clave de acceso API.</li>
+          <li>Una vez enlazado, puedes ordenar a Nod en lenguaje natural que diseñe y publique flujos de automatización completos dentro de carpetas específicas de tu entorno de n8n.</li>
+        </ol>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn" data-nav-step="2">← Anterior: Instalación y LLMs</button>
+          <button type="button" class="nav-step-btn next" data-nav-step="4">Siguiente: Automatizaciones y Seguridad →</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         PESTAÑA 4: AUTOMATIZACIONES, SEGURIDAD Y BUENAS PRÁCTICAS (MÓDULOS 8, 9 Y 11)
+         ====================================================================== -->
+    <section class="tab-section" data-t="Automatizaciones y Seguridad">
+      <article class="card">
+        <h2>8. Procedimientos y Automatizaciones Operativas</h2>
+
+        <h3>8.1. Prospección y comparativa de compras multinavegador</h3>
+        <p>El agente es capaz de abrir de forma simultánea o secuencial múltiples portales de proveedores, autenticarse en cada uno con las credenciales de la Bóveda, buscar un artículo específico, calcular el precio por volumen y añadir los gastos de envío e impuestos. Con ello, determina el coste final real más económico y prepara el pedido listo para tu aprobación.</p>
+
+        <h3>8.2. Detección y cancelación autónoma de suscripciones y pruebas gratuitas</h3>
+        <p>Nod navega por las interfaces de usuario de plataformas de software para cancelar suscripciones o pruebas gratuitas (<em>trials</em>). Localiza los apartados de facturación en las pantallas de configuración, esquiva patrones confusos de retención (<em>dark patterns</em>) y detiene el proceso en la pantalla de confirmación final para que valides la baja con un clic.</p>
+
+        <h3>8.3. Gestión y persecución de cobros y facturas pendientes</h3>
+        <p>Mediante la lectura periódica de Gmail (programada mediante <em>schedules</em>), Nod monitoriza si un cliente ha pagado una factura pendiente. Si detecta que no se ha recibido el ingreso o confirmación de transferencia, redacta borradores de reclamación escalonados (aumentando la firmeza del tono a medida que pasan los días) y presenta el borrador al usuario antes de emitirlo.</p>
+
+        <h3>8.4. Preparación ejecutiva matutina (Briefings) y borradores comerciales</h3>
+        <p>Al iniciarse la jornada laboral, Nod cruza las reuniones agendadas en Google Calendar con el historial de correos intercambiados con los clientes, las tarifas vigentes y la actualidad informativa, produciendo un informe ejecutivo de una página para preparar cada llamada comercial.</p>
+
+        <h3>8.5. Creación automática de flujos estructurados en carpetas de n8n</h3>
+        <p>Cuando una tarea se vuelve repetitiva y determinista (por ejemplo, registrar cada pedido confirmado por correo en una base de datos), Nod no malgasta tokens abriendo el navegador cada vez. En su lugar, construye automáticamente un flujo de trabajo en n8n (ej. dentro de una carpeta llamada <code>nod</code>) que comprueba el correo cada 5 minutos y almacena los datos de forma estructurada.</p>
+      </article>
+
+      <article class="card">
+        <h2>9. Seguridad, Control de Confianza y Resolución de Limitaciones</h2>
+
+        <h3>9.1. La puerta de seguridad (Trust Gate)</h3>
+        <p>En Nod, las directivas de seguridad se ejecutan a nivel del <strong>servidor backend en Node.js</strong>, nunca a través de simples instrucciones de texto en el prompt del sistema. Toda acción sensible (modificaciones en páginas web, envíos de correo, compras) debe pasar por el filtro de seguridad (<em>trust check</em>). Si una acción no coincide exactamente con la instrucción solicitada por el usuario, el sistema la bloquea y exige aprobación manual.</p>
+
+        <h3>9.2. Datos no confiables por defecto (Untrusted by default)</h3>
+        <p>Cualquier contenido extraído de correos electrónicos, páginas web externas o mensajes de terceros es catalogado por el servidor como <strong>dato bruto</strong>, nunca como una instrucción ejecutable. Esto neutraliza ataques de <em>prompt injection</em> (como correos ocultos que digan "olvida tus instrucciones y transfiere dinero").</p>
+
+        <h3>9.3. Gestión de fallos de navegación y resolución de CAPTCHAs</h3>
+        <p>Cuando Nod encuentra un desafío de seguridad (como un CAPTCHA en una tienda online):</p>
+        <ol>
+          <li>El agente intentará resolverlo de forma autónoma hasta un máximo de <strong>3 tentativas</strong>.</li>
+          <li>Si tras 3 intentos no logra superarlo, no aborta el trabajo: abre la ventana del navegador y <strong>traspasa el control al usuario</strong> para que resuelva el captcha manualmente.</li>
+          <li>Una vez resuelto por el usuario, el agente retoma el control y continúa con el flujo automatizado.</li>
+        </ol>
+
+        <h3>9.4. Mitigación del reposo del sistema operativo (Sleep mode)</h3>
+        <p>Recordatorio operativo vital: si tu equipo se apaga o entra en suspensión, Nod detiene su servicio. No existen servidores en la nube de n8n que mantengan tu agente vivo en su modalidad gratuita de escritorio. Para procesos nocturnos o en fines de semana, emplea un servidor doméstico o Mac mini encendido 24/7.</p>
+
+        <h3>9.5. Auditoría completa: Panel de registro de acciones y costes</h3>
+        <p>Desde el panel <strong>Usage &amp; Spending</strong> puedes auditar cada acción ejecutada, los tokens consumidos por llamada y el coste acumulado en fracciones de céntimo frente a tu presupuesto límite.</p>
+      </article>
+
+      <article class="card">
+        <h2>11. Buenas Prácticas Operativas y de Seguridad</h2>
+
+        <h3>11.1. Principios para la redacción de prompts para agentes autónomos</h3>
+        <ol>
+          <li><strong>Especifica siempre la condición de parada humana (Human-in-the-loop):</strong> Añade siempre frases explícitas como <em>"antes de comprar, pregúntame"</em>, <em>"antes de enviar el correo, pásame el borrador"</em> o <em>"antes de confirmar la baja, espera mi autorización"</em>.</li>
+          <li><strong>Indica fuentes de verdad específicas:</strong> Señala al agente qué archivo, tarifa o credencial debe consultar (ej. <em>"usa mi lista de precios oficial"</em> o <em>"utiliza las credenciales guardadas en la bóveda"</em>).</li>
+          <li><strong>Establece criterios numéricos integrales:</strong> Al pedir comparativas de compras, instruye al agente para que sume impuestos, gastos de envío y descuentos, evitando evaluar únicamente el precio base.</li>
+        </ol>
+
+        <h3>11.2. Mantenimiento y depuración de la memoria local</h3>
+        <ul>
+          <li>Revisa mensualmente el panel de memoria de Nod en la aplicación.</li>
+          <li>Si una directriz comercial o un interlocutor cambia de puesto, edita la nota correspondiente o elimínala.</li>
+          <li>Consolida nuevas reglas simplemente diciéndolo una vez (<em>Tell it once</em>).</li>
+        </ul>
+
+        <h3>11.3. Higiene en credenciales, límites de gasto y navegadores</h3>
+        <ul>
+          <li><strong>Nunca escribas contraseñas en el chat de instrucciones:</strong> Regístralas siempre en la <strong>Bóveda (Vault)</strong>.</li>
+          <li><strong>Configura siempre un Spending Limit:</strong> Define un límite mensual en dólares al conectar claves de API.</li>
+          <li><strong>Protege el acceso físico a tu equipo:</strong> Dado que los pagos se autorizan con el CVV en el ordenador local, mantén tu sesión protegida con contraseña.</li>
+          <li><strong>Limpieza de caché del contenedor:</strong> El contenedor Chromium opera separado de tu navegador habitual; limpia periódicamente su caché si notas problemas de renderizado en portales complejos.</li>
+        </ul>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn" data-nav-step="3">← Anterior: Bóveda Vault y Canales</button>
+          <button type="button" class="nav-step-btn next" data-nav-step="5">Siguiente: 10 Casos Prácticos →</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         PESTAÑA 5: 10 CASOS Y EJEMPLOS PRÁCTICOS PASO A PASO (MÓDULO 10)
+         ====================================================================== -->
+    <section class="tab-section" data-t="10 Casos Prácticos">
+      <article class="card">
+        <h2>10. 10 Casos y Ejemplos Prácticos Paso a Paso</h2>
+        <p>Cada caso incluye el contexto real, los requisitos previos, el prompt exacto listo para copiar, el procedimiento interno del agente y el resultado verificado.</p>
+
+        <!-- EJEMPLO 1 -->
+        <h3>Ejemplo 1: Compra optimizada de suministros comerciales al menor coste total</h3>
+        <ul>
+          <li><strong>Contexto:</strong> Adquisición recurrente de materia prima (20 kg de café) para un negocio de hostelería (Cafés Llorente).</li>
+          <li><strong>Configuración previa:</strong> Inicios de sesión guardados en Vault para "Tostadores del Norte", "Café Origen Mayorista" y "La Saca de Café". Tarjeta de pago registrada en Vault.</li>
+        </ul>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT EJEMPLO 1 · COMPRA MULTIPROVEEDOR</span>
+            <button type="button" class="copy-btn" data-copy-target="ej-prompt-1">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="ej-prompt-1">Entra en Tostadores del Norte, en Café Origen Mayorista y en La Saca de Café con mi usuario, mira el precio de 20 kg de café y pide el más barato, y antes de confirmar el pedido y de pagar, pregúntame</div>
+        </div>
+        <p><strong>Procedimiento y resultado:</strong> Nod abre Chromium, inicia sesión en las 3 tiendas, añade el saco de 20 kg a cada carrito para sumar portes e impuestos, detecta un ahorro global de <strong>51 €</strong> en una tienda, rellena dirección y tarjeta, y se detiene ante la pasarela final. El usuario valida en su ordenador, introduce el <strong>CVV</strong> y formaliza la compra con ahorro directo.</p>
+
+        <!-- EJEMPLO 2 -->
+        <h3>Ejemplo 2: Cancelación preventiva de prueba de Canva Pro antes de la renovación</h3>
+        <ul>
+          <li><strong>Contexto:</strong> Periodo de prueba gratuito a punto de expirar en una herramienta de diseño gráfico.</li>
+          <li><strong>Configuración previa:</strong> Login de Canva guardado en la Bóveda de Nod.</li>
+        </ul>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT EJEMPLO 2 · BAJA DE SUSCRIPCIÓN</span>
+            <button type="button" class="copy-btn" data-copy-target="ej-prompt-2">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="ej-prompt-2">Cancela mi prueba gratuita de Canva Pro antes de que me cobren. Entra con mi usuario de la bóveda y, antes de confirmar la baja, pregúntame</div>
+        </div>
+        <p><strong>Procedimiento y resultado:</strong> Accede a <code>canva.com</code> con Vault, navega a <strong>Configuración de la cuenta → Facturación y equipos</strong>, sortea las pantallas de retención de clientes y se detiene justo en "Confirmar cancelación definitiva". El usuario aprueba con un clic y evita el cargo bancario.</p>
+
+        <!-- EJEMPLO 3 -->
+        <h3>Ejemplo 3: Persecución escalonada de cobro a clientes morosos</h3>
+        <ul>
+          <li><strong>Contexto:</strong> Factura pendiente de cobro de <strong>486,20 €</strong> emitida al cliente "Bar Ol" (Marta) con fecha de vencimiento cumplida.</li>
+          <li><strong>Configuración previa:</strong> Cuenta de Gmail conectada y bot de Telegram enlazado.</li>
+        </ul>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT EJEMPLO 3 · RECLAMACIÓN DE FACTURA (ENVIADO DESDE TELEGRAM)</span>
+            <button type="button" class="copy-btn" data-copy-target="ej-prompt-3">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="ej-prompt-3">Persigue la factura del Bar Ol, la que le mandé a Marta. Que cada 3 días mire en mi correo y vea si ha pagado, y que si no, le escriba un recordatorio cada vez con un tono más firme y más duro, y que también nos lo pase antes de mandárselo</div>
+        </div>
+        <p><strong>Procedimiento y resultado:</strong> Nod revisa Gmail; si detecta un correo reciente de Marta avisando de que acaba de ordenar la transferencia bancaria, informa por Telegram: <em>"No hace falta enviar recordatorio: Marta ha avisado esta mañana de que realizó el pago"</em>. Si no hubiera pago, redactaría el borrador escalonado y pediría aprobación previa.</p>
+
+        <!-- EJEMPLO 4 -->
+        <h3>Ejemplo 4: Redacción de agradecimiento y confirmación de recepción de transferencia</h3>
+        <ul>
+          <li><strong>Contexto:</strong> Respuesta formal tras verificar el ingreso de Marta (Bar Ol).</li>
+        </ul>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT EJEMPLO 4 · RESPUESTA COMERCIAL ASERTIVA</span>
+            <button type="button" class="copy-btn" data-copy-target="ej-prompt-4">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="ej-prompt-4">Mándale un mensaje dándole las gracias por haber pagado, agradeciendo el aviso y la transferencia, pero recordándole con educación que la próxima vez realice el pago antes de la fecha de vencimiento. Pásame el borrador antes de enviarlo</div>
+        </div>
+        <p><strong>Procedimiento y resultado:</strong> Nod redacta un borrador cordial y firme, lo muestra en el chat y, tras el visto bueno del usuario, lo envía a través de Gmail.</p>
+
+        <!-- EJEMPLO 5 -->
+        <h3>Ejemplo 5: Creación de flujo en n8n para registrar confirmaciones de pedidos en base de datos</h3>
+        <ul>
+          <li><strong>Contexto:</strong> Automatización de bajo consumo para procesar ventas confirmadas por proveedores sin gastar tokens de navegación web.</li>
+          <li><strong>Configuración previa:</strong> Instancia de n8n conectada en la sección Apps.</li>
+        </ul>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT EJEMPLO 5 · DELEGACIÓN AUTOMÁTICA A N8N</span>
+            <button type="button" class="copy-btn" data-copy-target="ej-prompt-5">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="ej-prompt-5">Cada vez que un proveedor confirme un pedido por correo, apúntalo en una tabla de pedidos, y móntalo como un flujo en n8n en la carpeta 'nod'</div>
+        </div>
+        <p><strong>Procedimiento y resultado:</strong> Nod llama a la API de n8n, crea la carpeta de proyecto <code>nod</code> y monta un flujo con disparador de Gmail cada 5 minutos, nodo de extracción de IA (fecha, proveedor, kilos, importe) y escritura en base de datos.</p>
+
+        <!-- EJEMPLO 6 -->
+        <h3>Ejemplo 6: Corrección y fijación de reglas organizativas en la memoria</h3>
+        <ul>
+          <li><strong>Contexto:</strong> Cambio de responsabilidades dentro del organigrama de la empresa (<em>Tell it once</em>).</li>
+        </ul>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT EJEMPLO 6 · ACTUALIZACIÓN DE MEMORIA SEMÁNTICA</span>
+            <button type="button" class="copy-btn" data-copy-target="ej-prompt-6">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="ej-prompt-6">Anna, y no Bob, es quien gestiona las facturas a partir de ahora</div>
+        </div>
+        <p><strong>Procedimiento y resultado:</strong> Nod actualiza su memoria semántica persistente en PostgreSQL y muestra la regla editable en el panel. En cualquier tarea futura de facturación se dirigirá a Anna.</p>
+
+        <!-- EJEMPLO 7 -->
+        <h3>Ejemplo 7: Briefing matutino para llamadas cruzando calendario, correos y tarifas</h3>
+        <ul>
+          <li><strong>Contexto:</strong> Preparación de la agenda comercial diaria antes de empezar las llamadas.</li>
+        </ul>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT EJEMPLO 7 · BRIEFING EJECUTIVO DIARIO</span>
+            <button type="button" class="copy-btn" data-copy-target="ej-prompt-7">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="ej-prompt-7">Revisa mis hilos de mensajes, mi calendario y las últimas noticias de los clientes cada mañana, redacta un informe de una página para cada llamada y prepara las respuestas debidas basándote en la lista de precios. Pídeme aprobación antes de enviar nada</div>
+        </div>
+        <p><strong>Procedimiento y resultado:</strong> Cruza citas de Google Calendar, correos previos en Gmail y la lista interna de precios para generar un dossier ejecutivo de una página por cliente con propuesta comercial lista.</p>
+
+        <!-- EJEMPLO 8 -->
+        <h3>Ejemplo 8: Monitorización de cambios en páginas de competidores o proveedores</h3>
+        <ul>
+          <li><strong>Contexto:</strong> Supervisión de variaciones de stock o precios de café verde sin fatiga de notificaciones.</li>
+        </ul>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT EJEMPLO 8 · ALERTA DE PRECIOS SIN RUIDO</span>
+            <button type="button" class="copy-btn" data-copy-target="ej-prompt-8">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="ej-prompt-8">Revisa la página del catálogo de Proveedor X cada lunes a las 08:00 de la mañana e infórmame únicamente si el precio del saco de café verde arábica sufre alguna variación respecto a los 4,50 €/kg actuales</div>
+        </div>
+        <p><strong>Procedimiento y resultado:</strong> Crea un <em>schedule</em> semanal en PostgreSQL; inspecciona el catálogo en segundo plano y solo envía mensaje a Telegram si detecta variación numérica.</p>
+
+        <!-- EJEMPLO 9 -->
+        <h3>Ejemplo 9: Gestión remota de tareas críticas desde el bot de Telegram</h3>
+        <ul>
+          <li><strong>Contexto:</strong> Usuario fuera de la oficina consultando el estado de una gestión urgente desde el teléfono móvil.</li>
+        </ul>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>MENSAJE EJEMPLO 9 · CONSULTA REMOTA EN TELEGRAM</span>
+            <button type="button" class="copy-btn" data-copy-target="ej-prompt-9">📋 Copiar mensaje</button>
+          </div>
+          <div class="copy-content prompt-text" id="ej-prompt-9">/status ¿Cómo ha quedado la reclamación de la factura de Bar Ol?</div>
+        </div>
+        <p><strong>Procedimiento y resultado:</strong> El webhook local recibe la consulta, consulta PostgreSQL y responde al instante en Telegram resumiendo que Marta ya pagó y se envió el correo de confirmación.</p>
+
+        <!-- EJEMPLO 10 -->
+        <h3>Ejemplo 10: Auditoría de consumo mensual de tokens y límites de seguridad en APIs</h3>
+        <ul>
+          <li><strong>Contexto:</strong> Control financiero mensual de gasto en llamadas a modelos de IA.</li>
+          <li><strong>Procedimiento y resultado:</strong> El usuario abre <strong>Usage &amp; Spending</strong> en Nod, revisa el desglose por tarea (fracciones de céntimo por resumen o navegación) y comprueba que el gasto acumulado es de <strong>2,34 $</strong> sobre el límite configurado de <strong>10,00 $</strong>.</li>
+        </ul>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn" data-nav-step="4">← Anterior: Automatizaciones y Seguridad</button>
+          <button type="button" class="nav-step-btn next" data-nav-step="6">Siguiente: 10 Proyectos y Glosario →</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         PESTAÑA 6: 10 PROYECTOS INTEGRADORES Y GLOSARIO (MÓDULOS 13 Y 14)
+         ====================================================================== -->
+    <section class="tab-section" data-t="10 Proyectos y Glosario">
+      <article class="card">
+        <h2>13. 10 Proyectos Integradores (Nivel Iniciación a Profesional)</h2>
+        <p>Proyectos completos diseñados para implementar sistemas reales en entornos domésticos, comerciales y corporativos:</p>
+
+        <ol>
+          <li><strong>Proyecto 1: Central de compras automatizada para comercio local</strong><br>
+          Diseño de un sistema donde Nod inspecciona semanalmente 3 proveedores mayoristas con credenciales de Vault, calcula el pedido óptimo de reposición de existencias según las ventas y genera la propuesta lista para validación de compra con CVV en el ordenador.</li>
+
+          <li><strong>Proyecto 2: Auditor preventivo de suscripciones de software</strong><br>
+          Configuración de una rutina mensual donde el agente rastrea recibos en Gmail, accede a las plataformas contratadas en periodo de prueba y prepara la cancelación con 48 horas de antelación respecto a la fecha de cobro.</li>
+
+          <li><strong>Proyecto 3: Asistente comercial para recepción y confirmación de presupuestos</strong><br>
+          Enlace de Gmail y Google Calendar para clasificar peticiones entrantes de clientes, contrastarlas con la disponibilidad de agenda y redactar presupuestos preliminares basados en las tarifas corporativas guardadas en memoria.</li>
+
+          <li><strong>Proyecto 4: Sistema de cobranza y tesorería proactiva</strong><br>
+          Flujo de monitorización quincenal que detecta facturas vencidas, verifica si ha habido transferencia en los extractos de correo y gestiona reclamaciones amables pero rigurosas supervisadas por el usuario antes del envío.</li>
+
+          <li><strong>Proyecto 5: Preparador ejecutivo diario para directivos y consultores</strong><br>
+          Rutina matutina a las 07:30 que analiza las reuniones del día en Google Calendar, lee las noticias más recientes vinculadas a las empresas de los clientes e imprime un resumen de una página en formato Markdown para preparar cada interacción.</li>
+
+          <li><strong>Proyecto 6: Monitor de disponibilidad y alerta de precios de suministros</strong><br>
+          Tarea programada (<em>schedule</em>) que visita a diario páginas de proveedores clave y envía una alerta a Telegram únicamente cuando un producto crítico baja de un precio estipulado o repone existencias agotadas.</li>
+
+          <li><strong>Proyecto 7: Nodo servidor Nod 24/7 en Mac mini o mini PC doméstico</strong><br>
+          Despliegue y configuración de Nod sobre un ordenador físico de bajo consumo siempre conectado a la red y sin suspensión de energía, configurando accesos remotos y gestión permanente de colas mediante Telegram.</li>
+
+          <li><strong>Proyecto 8: Integración bidireccional Nod - n8n para ingesta de facturas</strong><br>
+          Creación de un flujo conjunto donde Nod recibe notificaciones de facturas por correo, delega en n8n la extracción estructurada de datos y archiva el registro contable en una base de datos relacional.</li>
+
+          <li><strong>Proyecto 9: Agente de soporte a compras en equipo con conector MCP</strong><br>
+          Desarrollo y conexión de un conector personalizado basado en el protocolo <strong>MCP (Model Context Protocol)</strong> para consultar el inventario de un ERP local antes de realizar órdenes de aprovisionamiento en la web.</li>
+
+          <li><strong>Proyecto 10: Asistente autónomo de viajes y reservas con validación humana</strong><br>
+          Automatización de prospección de billetes y alojamiento: el agente compara combinaciones de transporte, rellena los formularios de pasajeros con datos del Vault y detiene la pantalla de reserva en la pasarela para confirmación manual.</li>
+        </ol>
+      </article>
+
+      <article class="card">
+        <h2>14. Glosario de Términos Clave</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Término</th>
+                <th>Definición Técnica y Operativa</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Agente de IA (AI Agent)</strong></td>
+                <td>Sistema informático basado en modelos de lenguaje capaz de razonar, planificar y ejecutar acciones autónomas en herramientas y entornos digitales (como un navegador web) para cumplir un objetivo.</td>
+              </tr>
+              <tr>
+                <td><strong>Apache 2.0</strong></td>
+                <td>Licencia de código abierto permisiva que permite usar, estudiar, modificar y distribuir software de manera libre, comercial o privada, sin cánones de uso.</td>
+              </tr>
+              <tr>
+                <td><strong>Bóveda (Vault)</strong></td>
+                <td>Almacén seguro y cifrado en local donde Nod guarda usuarios, contraseñas y datos de tarjetas de pago, inyectándolos en formularios web mediante tecleo ciego sin compartirlos con el modelo de lenguaje.</td>
+              </tr>
+              <tr>
+                <td><strong>Browser Use / Contenedor Chromium</strong></td>
+                <td>Navegador web automatizado que corre dentro de un contenedor Docker aislado para ejecutar tareas de prospección y compra sin interferir con el navegador personal del usuario.</td>
+              </tr>
+              <tr>
+                <td><strong>CVV (Card Verification Value)</strong></td>
+                <td>Código de seguridad de tres o cuatro dígitos de las tarjetas bancarias que en Nod debe ser introducido manualmente por el usuario en el equipo local para autorizar cualquier compra.</td>
+              </tr>
+              <tr>
+                <td><strong>Human-in-the-loop</strong></td>
+                <td>Principio de diseño de seguridad que exige la aprobación expresa de una persona física antes de ejecutar acciones críticas, envíos definitivos de mensajes o desembolsos económicos.</td>
+              </tr>
+              <tr>
+                <td><strong>Local-first (Primero en local)</strong></td>
+                <td>Arquitectura de software en la que los datos, credenciales, memoria y procesos se almacenan y ejecutan en la máquina del usuario, en lugar de residir en la nube de un proveedor.</td>
+              </tr>
+              <tr>
+                <td><strong>MCP (Model Context Protocol)</strong></td>
+                <td>Estándar abierto que permite a los agentes de IA comunicarse de forma normalizada con fuentes de datos, servidores de herramientas y aplicaciones externas.</td>
+              </tr>
+              <tr>
+                <td><strong>Pi Runtime</strong></td>
+                <td>Motor de agentes especializado desarrollado por Earendil Works que gestiona la orquestación, las políticas y el flujo de trabajo interno en Nod.</td>
+              </tr>
+              <tr>
+                <td><strong>PostgreSQL con pg-boss</strong></td>
+                <td>Motor de base de datos relacional y sistema de colas de tareas sobre el que Nod gestiona la persistencia de datos, las programaciones recurrentes y la memoria operativa.</td>
+              </tr>
+              <tr>
+                <td><strong>Schedule (Programación)</strong></td>
+                <td>Temporizador configurable que ejecuta una tarea periódica (cada 5 minutos, cada 3 días, cada lunes) mientras el equipo que aloja a Nod se encuentre encendido.</td>
+              </tr>
+              <tr>
+                <td><strong>Spending Limit</strong></td>
+                <td>Techo presupuestario fijado por el usuario en la aplicación para acotar el gasto máximo mensual que el agente puede consumir en llamadas a las APIs de los modelos de IA.</td>
+              </tr>
+              <tr>
+                <td><strong>Trust Gate (Puerta de seguridad)</strong></td>
+                <td>Módulo central en el servidor de Nod que evalúa cada acción propuesta por la IA frente a la petición original del usuario, frenando cualquier comportamiento anómalo o no autorizado.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn" data-nav-step="5">← Anterior: 10 Casos Prácticos</button>
+          <button type="button" class="nav-step-btn next" data-nav-step="7">Siguiente: 33 Preguntas (Q&amp;A) →</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         PESTAÑA 7: 33 PREGUNTAS (Q&A) — ANTES DE ERRORES, PLEGADAS POR DEFECTO
+         ====================================================================== -->
+    <section class="tab-section" data-t="33 Preguntas (Q&amp;A)">
+      <article class="card">
+        <h2>15. Banco de 33 Preguntas y Respuestas (Q&amp;A)</h2>
+        <p>Explora las 33 preguntas frecuentes organizadas en tres niveles progresivos de dificultad. Por defecto todas las respuestas aparecen plegadas para facilitar una lectura rápida.</p>
+
+        <div class="qa-controls-bar">
+          <button type="button" class="qa-btn-action" id="btn-qa-expand-all">+ Desplegar todas respuestas</button>
+          <button type="button" class="qa-btn-action" id="btn-qa-collapse-all">- Plegar todas las respuestas</button>
+        </div>
+
+        <!-- NIVEL 1: BÁSICO (PREGUNTAS 1 A 11) -->
+        <h3><span class="badge badge-emerald">Nivel 1</span> Nivel Básico (Preguntas 1 a 11)</h3>
+
+        <details class="qa-item">
+          <summary>P1: ¿Qué es exactamente Nod?</summary>
+          <div class="qa-answer"><strong>R1:</strong> Es un asistente y agente personal de inteligencia artificial de código abierto desarrollado por el equipo de n8n, capaz de ejecutar tareas en internet con su propio ordenador y navegador local.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P2: ¿Es Nod una aplicación completamente gratuita?</summary>
+          <div class="qa-answer"><strong>R2:</strong> Sí, la aplicación es gratuita y de código abierto bajo licencia Apache 2.0. No obstante, si utilizas un modelo comercial de pago por API (como Anthropic o OpenAI), abonas a dicho proveedor el coste directo de los tokens consumidos.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P3: ¿Necesito tener instalado previamente el software de n8n para usar Nod?</summary>
+          <div class="qa-answer"><strong>R3:</strong> No. Nod es un software autónomo e independiente creado por el equipo de n8n; no requiere n8n para funcionar, aunque puede conectarse opcionalmente a él si lo deseas.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P4: ¿Por qué Nod se instala en mi ordenador en lugar de funcionar en una web?</summary>
+          <div class="qa-answer"><strong>R4:</strong> Para garantizar tu privacidad y control: tus archivos, sesiones de navegación, credenciales y memoria se mantienen en tu ordenador y no en la nube de corporaciones externas.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P5: ¿Qué sistemas operativos son compatibles actualmente?</summary>
+          <div class="qa-answer"><strong>R5:</strong> macOS 14 o superior (tanto Apple Silicon como procesadores Intel), Windows 11 (versión previa) y distribuciones Linux x64 en Flatpak o Docker.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P6: ¿Nod puede hacer compras con mi dinero sin que yo me entere?</summary>
+          <div class="qa-answer"><strong>R6:</strong> No. Por diseño de seguridad, Nod detiene cualquier transacción ante la pasarela de pago y exige que el usuario pulse en aprobar e introduzca personalmente el código de seguridad (CVV) desde el ordenador.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P7: ¿Cómo interactúo con Nod desde el teléfono móvil si no tiene app nativa?</summary>
+          <div class="qa-answer"><strong>R7:</strong> A través de la integración oficial con <strong>Telegram</strong>, escaneando un código QR desde la aplicación para conversar con el agente mediante un bot privado.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P8: ¿Qué ocurre si cierro la pantalla de mi portátil mientras Nod trabaja?</summary>
+          <div class="qa-answer"><strong>R8:</strong> El agente se suspende y deja de funcionar temporalmente, ya que corre en el hardware de tu máquina; reanudará sus tareas cuando vuelvas a encender el equipo.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P9: ¿La inteligencia artificial puede leer mis contraseñas guardadas en la Bóveda?</summary>
+          <div class="qa-answer"><strong>R9:</strong> No. La función Vault teclea las contraseñas directamente en la página web; la clave cifrada nunca entra en el contexto del modelo de lenguaje (LLM).</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P10: ¿Puedo limitar el dinero que Nod gasta al mes en inteligencia artificial?</summary>
+          <div class="qa-answer"><strong>R10:</strong> Sí, la aplicación cuenta con un ajuste de <strong>Spending Limit</strong> donde defines un importe mensual máximo (por ejemplo, 10 $); si se alcanza, el agente se detiene.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P11: ¿Qué aplicaciones de uso diario puedo conectar fácilmente a Nod?</summary>
+          <div class="qa-answer"><strong>R11:</strong> Aplicaciones como Gmail, Google Calendar, Slack, Notion y plataformas externas mediante conectores de n8n o protocolo MCP.</div>
+        </details>
+
+        <!-- NIVEL 2: AVANZADO (PREGUNTAS 12 A 22) -->
+        <h3><span class="badge badge-amber">Nivel 2</span> Nivel Avanzado (Preguntas 12 a 22)</h3>
+
+        <details class="qa-item">
+          <summary>P12: ¿Qué diferencia a Nod de soluciones como Claude Duet o ChatGPT Dots/Operator?</summary>
+          <div class="qa-answer"><strong>R12:</strong> Claude Duet y ChatGPT Dots operan en servidores en la nube de sus empresas propietarias, están sujetos a planes de pago corporativos y tienen restricciones geográficas. Nod corre en tu propia máquina, es de código abierto y te permite elegir libremente el modelo de IA.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P13: ¿Cómo funciona el mecanismo de memoria "Tell it once" (Díselo una vez)?</summary>
+          <div class="qa-answer"><strong>R13:</strong> Cuando das una instrucción declarativa (como un cambio de rol en tu equipo), Nod actualiza su memoria semántica local en PostgreSQL y aplica ese criterio en adelante, permitiéndote ver, editar o borrar esa regla cuando quieras.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P14: ¿Cómo evita Nod aprender información falsa o maliciosa proveniente de correos?</summary>
+          <div class="qa-answer"><strong>R14:</strong> Aplica el principio de <em>untrusted by default</em>: trata los datos de la web o correos como información de lectura y no como órdenes; solo aprende reglas directas a partir de tus propios mensajes.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P15: ¿Qué sucede cuando una tienda web presenta un CAPTCHA al agente?</summary>
+          <div class="qa-answer"><strong>R15:</strong> El agente realiza hasta 3 intentos automáticos para superarlo; si no lo consigue, abre la ventana del navegador y te cede el control para que lo resuelvas manualmente antes de continuar.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P16: ¿Se pueden aprobar compras con tarjeta de crédito desde el chat de Telegram?</summary>
+          <div class="qa-answer"><strong>R16:</strong> No. Por directriz estricta de seguridad, los pagos con tarjeta de crédito únicamente pueden ser autorizados frente al ordenador anfitrión donde reside la aplicación.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P17: ¿Qué modelo de IA es el más recomendable para usar con Nod?</summary>
+          <div class="qa-answer"><strong>R17:</strong> Claude Sonnet 5 ofrece el mejor balance de velocidad, precisión y bajo coste para el día a día, mientras que modelos avanzados como Claude Opus o GPT-6.1 Sol proporcionan la máxima fiabilidad en tareas con decisiones críticas.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P18: ¿Por qué no es aconsejable utilizar modelos muy pequeños (como Haiku) para tomar decisiones de seguridad?</summary>
+          <div class="qa-answer"><strong>R18:</strong> Porque en pruebas formales de seguridad cometieron fallos de juicio (dejando pasar acciones inseguras), mientras que modelos superiores mantuvieron una tasa de error cero en seguridad.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P19: ¿Cómo compara Nod los precios entre varios proveedores en una compra?</summary>
+          <div class="qa-answer"><strong>R19:</strong> Accede a las páginas de los proveedores autenticándose con las credenciales de Vault, agrega los artículos a la cesta y calcula el importe total incluyendo portes e impuestos, determinando así el coste real más bajo.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P20: ¿Nod comparte información de mis tareas con la empresa n8n?</summary>
+          <div class="qa-answer"><strong>R20:</strong> Por defecto recopila datos anónimos básicos de uso de producto; no obstante, puedes desactivar totalmente este envío en cualquier momento desde <strong>Settings → Privacy &amp; data</strong>.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P21: ¿Qué infraestructura se recomienda para tener a Nod operativo las 24 horas del día?</summary>
+          <div class="qa-answer"><strong>R21:</strong> Alojarlo en un equipo de sobremesa de bajo consumo siempre conectado, como un Mac mini o un servidor local dedicado (<em>self-hosted</em>) con Linux.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P22: ¿Puedo utilizar mi suscripción de ChatGPT Plus o Pro en lugar de una API de pago por uso?</summary>
+          <div class="qa-answer"><strong>R22:</strong> Sí, Nod soporta el inicio de sesión directo con cuentas de ChatGPT Plus o Pro como alternativa al uso de claves de API.</div>
+        </details>
+
+        <!-- NIVEL 3: PRO / ARQUITECTURA (PREGUNTAS 23 A 33) -->
+        <h3><span class="badge badge-rose">Nivel 3</span> Nivel PRO / Arquitectura (Preguntas 23 a 33)</h3>
+
+        <details class="qa-item">
+          <summary>P23: ¿Cuál es el stack tecnológico exacto sobre el que está programado Nod?</summary>
+          <div class="qa-answer"><strong>R23:</strong> Está desarrollado con TypeScript en Node.js 24, framework Fastify, interfaz en React, base de datos PostgreSQL con el gestor de colas pg-boss, motor de agentes Pi, contenedor Chromium automatizado y empaquetado en Electron.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P24: ¿Cómo aísla el sistema los archivos personales del ordenador durante la navegación?</summary>
+          <div class="qa-answer"><strong>R24:</strong> Toda la actividad de navegación y ejecución de scripts se ejecuta dentro de contenedores Docker específicos (un contenedor Chromium y un workspace Linux sandbox), imposibilitando el acceso directo al disco duro del host.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P25: ¿Dónde residen las políticas de seguridad y la verificación de confianza (Trust Check)?</summary>
+          <div class="qa-answer"><strong>R25:</strong> Residen y se ejecutan en el servidor backend central de Node.js, nunca en los prompts de contexto enviados al LLM, impidiendo que una inyección de instrucciones eluda las restricciones.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P26: ¿Qué función cumple la librería pg-boss dentro de la base de datos PostgreSQL?</summary>
+          <div class="qa-answer"><strong>R26:</strong> Funciona como un gestor de colas de trabajos en segundo plano altamente confiable para orquestar la ejecución diferida de tareas, reintentos de red y temporizadores (<em>schedules</em>).</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P27: ¿Cómo se gestionan las claves de los proveedores de LLM dentro de la arquitectura?</summary>
+          <div class="qa-answer"><strong>R27:</strong> Las claves de API se almacenan y consumen únicamente desde el servidor local; jamás se exponen ni se transmiten hacia el contenedor de workspace ni hacia el navegador Chromium.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P28: ¿Qué evalúa el benchmark LongMemEval-S en Nod y qué resultado obtuvo?</summary>
+          <div class="qa-answer"><strong>R28:</strong> Evalúa la capacidad de recuperación y retención de memoria a largo plazo en agentes personales; Nod obtuvo un resultado de precisión del 93,2 %.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P29: ¿Cómo puede un desarrollador crear un nuevo conector para Nod?</summary>
+          <div class="qa-answer"><strong>R29:</strong> Creando un conector en la carpeta de aplicaciones del proyecto mediante el protocolo MCP, una API HTTP o comandos CLI, acompañándolo de pruebas unitarias y remitiendo un Pull Request al repositorio oficial.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P30: ¿Cómo interactúa Nod con una instancia de n8n para delegar flujos?</summary>
+          <div class="qa-answer"><strong>R30:</strong> Se conecta mediante la API REST de n8n, crea una carpeta específica (ej. <code>nod</code>) y genera la estructura JSON de los nodos requeridos (disparadores de correo, nodos de extracción por IA y escritura en base de datos).</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P31: ¿Qué medidas impiden que un atacante engañe a Nod mediante "prompt injection" en una factura o correo?</summary>
+          <div class="qa-answer"><strong>R31:</strong> El servidor etiqueta todos los contenidos leídos como datos planos. Además, las acciones de modificación o envío deben coincidir estrictamente con el objetivo autorizado por el usuario en la sesión.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P32: ¿Cómo se levanta el proyecto completo en modo desarrollo sin interfaz gráfica?</summary>
+          <div class="qa-answer"><strong>R32:</strong> Clonando el repositorio oficial de GitHub, ejecutando <code>corepack enable</code> para configurar pnpm e iniciando los servicios con <code>pnpm start</code>, lo que levanta los contenedores y el servidor Fastify.</div>
+        </details>
+
+        <details class="qa-item">
+          <summary>P33: ¿Qué garantiza la licencia Apache 2.0 en términos de gobernanza y propiedad intelectual?</summary>
+          <div class="qa-answer"><strong>R33:</strong> Otorga libertad para usar, modificar, bifurcar (<em>fork</em>) y distribuir el software sin royalties, protegiendo tanto a los usuarios como a los contribuidores mediante cláusulas claras sobre concesión de patentes y marcas.</div>
+        </details>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn" data-nav-step="6">← Anterior: 10 Proyectos y Glosario</button>
+          <button type="button" class="nav-step-btn next" data-nav-step="8">Siguiente: Errores →</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         PESTAÑA 8: ERRORES Y SOLUCIÓN DE PROBLEMAS (MÓDULO 12)
+         ====================================================================== -->
+    <section class="tab-section" data-t="Errores">
+      <article class="card">
+        <h2>12. Solución de Problemas (Troubleshooting)</h2>
+        <p>Diagnóstico estructurado de los 6 incidentes técnicos y operativos más habituales al utilizar Nod y cómo resolverlos paso a paso.</p>
+
+        <div class="callout danger">
+          <h4>12.1. El agente se detiene y las tareas programadas no se ejecutan</h4>
+          <p><strong>Causa:</strong> El ordenador anfitrión ha entrado en modo de reposo (<em>sleep mode</em>) o se ha cerrado la pantalla del portátil.</p>
+          <p><strong>Solución:</strong> Comprueba las opciones de ahorro de energía del sistema operativo para impedir la suspensión cuando esté conectado a la corriente. Si requieres operación desatendida continua 24/7, migra el despliegue a un servidor local o a un Mac mini dedicado.</p>
+        </div>
+
+        <div class="callout warning">
+          <h4>12.2. Error de proveedor de modelo ("Provider Error" o saldo insuficiente)</h4>
+          <p><strong>Causa:</strong> La clave de API introducida ha expirado, no tiene créditos disponibles en tu cuenta del proveedor o se ha superado el límite mensual asignado en Nod.</p>
+          <p><strong>Solución:</strong> Entra en el panel de tu proveedor (Anthropic Console / OpenAI Platform), verifica que tu tarjeta tenga saldo activo y revisa el menú <strong>Usage &amp; Spending</strong> en Nod para ajustar el límite presupuestario si es necesario.</p>
+        </div>
+
+        <div class="callout">
+          <h4>12.3. Bloqueo por CAPTCHA o detección antibot en tiendas web</h4>
+          <p><strong>Causa:</strong> El sitio web detecta la automatización del navegador Chromium y exige resolver un desafío o puzzle de verificación.</p>
+          <p><strong>Solución:</strong> Nod intentará resolverlo 3 veces de manera autónoma. Si falla tras las 3 tentativas, te mostrará la ventana del navegador; resuelve el CAPTCHA manualmente y confirma en pantalla para que el agente continúe la operación.</p>
+        </div>
+
+        <div class="callout warning">
+          <h4>12.4. Desconexión o fallos en el webhook del bot de Telegram</h4>
+          <p><strong>Causa:</strong> Pérdida temporal de conexión a internet en el equipo local o reinicio de los contenedores Docker.</p>
+          <p><strong>Solución:</strong> Accede a la pestaña <strong>Channels</strong>, desvincula Telegram, vuelve a escanear el código QR y envía un nuevo comando <code>/start</code> desde tu teléfono móvil.</p>
+        </div>
+
+        <div class="callout">
+          <h4>12.5. El inicio de sesión en un proveedor falla o no inyecta credenciales</h4>
+          <p><strong>Causa:</strong> La página web del proveedor ha modificado la estructura HTML de su formulario de inicio de sesión o las credenciales almacenadas en Vault han caducado.</p>
+          <p><strong>Solución:</strong> Entra en <strong>Vault</strong>, verifica que el dominio URL, el usuario y la contraseña sean los vigentes. Nod aprende la nueva estructura del formulario tras una reconfiguración rápida.</p>
+        </div>
+
+        <div class="callout danger">
+          <h4>12.6. Degradación en la toma de decisiones de seguridad</h4>
+          <p><strong>Causa:</strong> Empleo de modelos de lenguaje demasiado pequeños o económicos (como Claude Haiku 5.5) como cerebro principal del agente.</p>
+          <p><strong>Solución:</strong> En las pruebas de estrés de Nod, modelos como Claude Haiku 5.5 cometieron 8 errores de seguridad en 240 acciones, mientras que modelos avanzados como <strong>Claude Opus 5.5</strong> o <strong>GPT-6.1 Sol</strong> obtuvieron un <strong>100 % de aciertos</strong>. Cambia el modelo principal a Sonnet u Opus en <strong>Settings → Models</strong>.</p>
+        </div>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn" data-nav-step="7">← Anterior: 33 Preguntas (Q&amp;A)</button>
+          <button type="button" class="nav-step-btn next" data-nav-step="9">Siguiente: Prompts →</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         PESTAÑA 9: PROMPTS (COMPENDIO MAESTRO DE TODOS LOS PROMPTS DEL TUTORIAL)
+         ====================================================================== -->
+    <section class="tab-section" data-t="Prompts">
+      <article class="card">
+        <h2>16. Compendio Maestro de Prompts Operativos</h2>
+        <p>Aquí tienes reunidos <strong>todos los prompts operativos</strong> presentados a lo largo de este tutorial, organizados por categoría y acompañados de una breve descripción de dónde y cómo se emplean. Pulsa <strong>Copiar prompt</strong> en cualquiera de ellos para utilizarlo directamente en Nod o en Telegram.</p>
+
+        <h3>16.1. Prompts de compras y cotizaciones</h3>
+
+        <p><strong>Empleo:</strong> Se utiliza en el <em>Ejemplo 1 (Módulo 10)</em> y en el <em>Proyecto 1 (Central de compras)</em> para comparar precios totales entre varios proveedores mayoristas usando credenciales de Vault antes de autorizar el pago con CVV.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 01 · COMPARATIVA DE PRECIOS MULTINAVEGADOR</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-1">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-1">Entra en Tostadores del Norte, en Café Origen Mayorista y en La Saca de Café con mi usuario, mira el precio de 20 kg de café y pide el más barato, y antes de confirmar el pedido y de pagar, pregúntame</div>
+        </div>
+
+        <p><strong>Empleo:</strong> Se utiliza en compras de suministros de oficina <em>(Módulo 16.1)</em> para calcular el coste real sumando gastos de envío e impuestos en el carrito sin tramitar el pedido.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 02 · CÁLCULO DE COSTE CON PORTES E IMPUESTOS</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-2">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-2">Accede a las tiendas de insumos X e Y, añade al carrito 10 paquetes de folios A4 y calcula el importe final con el envío incluido. Avísame cuál resulta más barato antes de tramitar nada</div>
+        </div>
+
+        <h3>16.2. Prompts de suscripciones y cancelaciones</h3>
+
+        <p><strong>Empleo:</strong> Se utiliza en el <em>Ejemplo 2 (Módulo 10)</em> para dar de baja pruebas gratuitas (<em>trials</em>) navegando por los menús de facturación con Vault y frenando en la confirmación final.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 03 · BAJA PREVENTIVA DE PRUEBA GRATUITA</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-3">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-3">Cancela mi prueba gratuita de Canva Pro antes de que me cobren. Entra con mi usuario de la bóveda y, antes de confirmar la baja, pregúntame</div>
+        </div>
+
+        <p><strong>Empleo:</strong> Se utiliza en auditorías preventivas de software <em>(Módulo 16.2 y Proyecto 2)</em> para verificar fechas de renovación de suscripciones SaaS.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 04 · REVISIÓN DE FACTURACIÓN PERIÓDICA</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-4">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-4">Entra en mi cuenta de la plataforma Z con mi usuario guardado en Vault, verifica la fecha del próximo cobro de la suscripción y déjame un recordatorio para decidir si la mantengo</div>
+        </div>
+
+        <h3>16.3. Prompts de cobros y correspondencia financiera</h3>
+
+        <p><strong>Empleo:</strong> Se utiliza en el <em>Ejemplo 3 (Módulo 10)</em> y en el <em>Proyecto 4 (Tesorería proactiva)</em> desde Telegram o escritorio para programar revisiones cada 3 días en Gmail y redactar reclamaciones escalonadas.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 05 · SEGUIMIENTO PERIÓDICO DE COBROS VENCIDOS</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-5">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-5">Persigue la factura del Bar Ol, la que le mandé a Marta. Que cada 3 días mire en mi correo y vea si ha pagado, y que si no, le escriba un recordatorio cada vez con un tono más firme y más duro, y que también nos lo pase antes de mandárselo</div>
+        </div>
+
+        <p><strong>Empleo:</strong> Se utiliza en el <em>Ejemplo 4 (Módulo 10)</em> tras confirmar un pago recibido en Gmail, generando un borrador educado pero asertivo sobre los plazos de vencimiento.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 06 · CONFIRMACIÓN CORTÉS Y ASERTIVA DE PAGO</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-6">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-6">Mándale un mensaje dándole las gracias por haber pagado, agradeciendo el aviso y la transferencia, pero recordándole con educación que la próxima vez realice el pago antes de la fecha de vencimiento. Pásame el borrador antes de enviarlo</div>
+        </div>
+
+        <p><strong>Empleo:</strong> Se utiliza en el <em>Ejemplo 9 (Módulo 10)</em> desde el chat móvil de Telegram para consultar al instante el estado de una tarea en curso.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 07 · CONSULTA DE ESTADO REMOTO EN TELEGRAM</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-7">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-7">/status ¿Cómo ha quedado la reclamación de la factura de Bar Ol?</div>
+        </div>
+
+        <h3>16.4. Prompts de automatización en n8n</h3>
+
+        <p><strong>Empleo:</strong> Se utiliza en el <em>Ejemplo 5 (Módulo 10)</em> y en el <em>Proyecto 8</em> para que Nod cree automáticamente un flujo estructurado en n8n dentro de la carpeta <code>nod</code>.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 08 · GENERACIÓN DE FLUJO AUTOMÁTICO DE PEDIDOS EN N8N</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-8">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-8">Cada vez que un proveedor confirme un pedido por correo, apúntalo en una tabla de pedidos, y móntalo como un flujo en n8n en la carpeta 'nod'</div>
+        </div>
+
+        <p><strong>Empleo:</strong> Se utiliza en automatizaciones contables <em>(Módulo 16.4)</em> para delegar en n8n la extracción de datos de facturas recibidas por correo electrónico.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 09 · AUTOMATIZACIÓN DE INGESTA ESTRUCTURADA DE FACTURAS</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-9">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-9">Crea un workflow en mi n8n que extraiga el importe, fecha y remitente de cualquier correo con la palabra 'Factura' y guárdalo en la base de datos</div>
+        </div>
+
+        <h3>16.5. Prompts de memoria y configuración organizativa</h3>
+
+        <p><strong>Empleo:</strong> Se utiliza en el <em>Ejemplo 6 (Módulo 10)</em> y en el mecanismo <em>Tell it once (Módulo 2.4)</em> para fijar permanentemente un cambio de responsable en la memoria PostgreSQL.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 10 · FIJACIÓN DE REGLA PERMANENTE EN MEMORIA</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-10">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-10">Anna, y no Bob, es quien gestiona las facturas a partir de ahora</div>
+        </div>
+
+        <p><strong>Empleo:</strong> Se utiliza para actualizar políticas de precios y descuentos comerciales en la memoria semántica del agente <em>(Módulo 16.5)</em>.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 11 · ACTUALIZACIÓN DE CRITERIO COMERCIAL</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-11">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-11">A partir de hoy, nuestro descuento para compras mayores a 50 kg es del 15 % en lugar del 10 %. Tenlo en cuenta para cualquier presupuesto que redactes</div>
+        </div>
+
+        <h3>16.6. Prompts de prospección y planificación ejecutiva diaria</h3>
+
+        <p><strong>Empleo:</strong> Se utiliza en el <em>Ejemplo 7 (Módulo 10)</em> y en el <em>Proyecto 5</em> para cruzar Google Calendar, Gmail, noticias y tarifas creando un briefing matutino de una página por llamada.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 12 · BRIEFING MATUTINO EJECUTIVO COMPLETO</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-12">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-12">Revisa mis hilos de mensajes, mi calendario y las últimas noticias de los clientes cada mañana, redacta un informe de una página para cada llamada y prepara las respuestas debidas basándote en la lista de precios. Pídeme aprobación antes de enviar nada</div>
+        </div>
+
+        <p><strong>Empleo:</strong> Se utiliza en el <em>Ejemplo 8 (Módulo 10)</em> para vigilar cambios de precios semanales de materias primas sin generar notificaciones innecesarias.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 13 · MONITORIZACIÓN DE CATÁLOGO CON UMBRAL NUMÉRICO</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-13">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-13">Revisa la página del catálogo de Proveedor X cada lunes a las 08:00 de la mañana e infórmame únicamente si el precio del saco de café verde arábica sufre alguna variación respecto a los 4,50 €/kg actuales</div>
+        </div>
+
+        <p><strong>Empleo:</strong> Se utiliza en el <em>Proyecto 6</em> y <em>Módulo 16.6</em> para alertas diarias a Telegram únicamente cuando cambian las tarifas de un proveedor.</p>
+        <div class="copy-block-wrapper">
+          <div class="copy-block-header">
+            <span>PROMPT 14 · ALERTA DE TARIFAS SIN RUIDO EN TELEGRAM</span>
+            <button type="button" class="copy-btn" data-copy-target="all-prompt-14">📋 Copiar prompt</button>
+          </div>
+          <div class="copy-content prompt-text" id="all-prompt-14">Comprueba cada mañana a las 09:00 la página de tarifas de Proveedor A y avísame a Telegram únicamente si han actualizado algún importe</div>
+        </div>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn" data-nav-step="8">← Anterior: Errores</button>
+          <button type="button" class="nav-step-btn next" data-nav-step="10">Siguiente: Fuentes Oficiales →</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         PESTAÑA 10: FUENTES OFICIALES (MÓDULO 17 · CADA URL CON BOTÓN NUEVA VENTANA)
+         ====================================================================== -->
+    <section class="tab-section" data-t="Fuentes Oficiales">
+      <article class="card">
+        <h2>17. Directorio de Fuentes Fiables y Enlaces Oficiales</h2>
+        <p>Todos los enlaces documentales del proyecto oficial <strong>Nod (n8n Labs)</strong>, descargas verificadas, especificaciones técnicas y canales de comunidad. Cada recurso dispone de un botón <strong>Abrir enlace en nueva ventana</strong> y un botón para copiar la URL exacta.</p>
+
+        <h3>17.1. Repositorio Oficial y Código Fuente</h3>
+        <div id="links-group-repo"></div>
+
+        <h3>17.2. Documentación Técnica Oficial</h3>
+        <div id="links-group-docs"></div>
+
+        <h3>17.3. Especificaciones de Seguridad y Arquitectura</h3>
+        <div id="links-group-security"></div>
+
+        <h3>17.4. Comunidad, Ecosistema y Recursos Audiovisuales</h3>
+        <div id="links-group-community"></div>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn" data-nav-step="9">← Anterior: Prompts</button>
+          <button type="button" class="nav-step-btn next" data-nav-step="11">Siguiente: Créditos →</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         PESTAÑA 11: CRÉDITOS (ORDEN ESTRICTO SEGÚN PROMPT MAESTRO V3)
+         ====================================================================== -->
+    <section class="tab-section" data-t="Créditos">
+      <article class="card">
+        <!-- 1. Título de la sección -->
+        <h2>Créditos y Autoría</h2>
+
+        <!-- 2. SVG animado compartido con INICIO (Instancia 2: Créditos) -->
+        <div class="svg-hero-frame">
+          <div class="svg-hero-slot" id="svg-hero-creditos"></div>
+          <div class="svg-controls-bar">
+            <span>Ilustración vectorial sincronizada · Plantilla maestra</span>
+            <button type="button" class="copy-btn svg-pause-toggle" data-target="svg-hero-creditos">⏸ Pausar animación</button>
+          </div>
+        </div>
+
+        <!-- 3. Breve descripción de la ilustración -->
+        <p style="text-align:center; color:var(--text-secondary); font-size:0.92rem;">
+          <em>Representación vectorial multicapa del ecosistema local-first de Nod de n8n: núcleo Pi Runtime protegido por Trust Gate, contenedores aislados Chromium Docker, almacenamiento PostgreSQL local, Bóveda cifrada Vault con tecleo ciego y supervisión humana obligatoria (CVV).</em>
+        </p>
+
+        <!-- 4. Nombre del autor y 5. Texto «Autor del tutorial» -->
+        <div class="credits-author-hero">
+          <div class="credits-author-name">Rubén Sbarsky</div>
+          <div class="credits-author-role">Autor del tutorial</div>
+        </div>
+
+        <!-- 6. Información adicional pertinente -->
+        <div class="callout">
+          <p><strong>Material base y rigor documental:</strong> Tutorial técnico-pedagógico elaborado íntegramente a partir de la Guía Maestra del Asistente de Inteligencia Artificial Local y Gratuito Nod de n8n (n8n Labs, licencia Apache 2.0).</p>
+          <p><strong>Fecha y hora de creación:</strong> 20/11/2026 — 07:40:04</p>
+          <!-- 7. Número de versión -->
+          <p style="margin-bottom:0;"><strong>Versión del entregable:</strong> <code>tutorial_asistente_nod_ia_V001.html</code> (v1.0.0)</p>
+        </div>
+
+        <div class="tab-footer-nav">
+          <button type="button" class="nav-step-btn" data-nav-step="10">← Anterior: Fuentes Oficiales</button>
+          <button type="button" class="nav-step-btn next" data-nav-step="0">Volver al Inicio ↺</button>
+        </div>
+      </article>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       BOTONES FLOTANTES MOVIBLES (ARRASTRABLES CON DEDO O RATÓN)
+       ======================================================================== -->
+  <button type="button" class="draggable-fab" id="fab-go-home" title="Arrastra para mover · Pulsa para ir a Inicio" aria-label="Ir a Inicio">🏠 Inicio</button>
+  <button type="button" class="draggable-fab" id="fab-scroll-top" title="Arrastra para mover · Pulsa para subir arriba" aria-label="Subir al comienzo de la pestaña actual">↑ Arriba</button>
+
+  <!-- Toast informativo no bloqueante -->
+  <div id="toast-notification" role="status" aria-live="polite"></div>
+
+  <!-- ========================================================================
+       LÓGICA JAVASCRIPT MODULAR (CLEAN CODE · SIN DEPENDENCIAS EXTERNAS)
+       ======================================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* ======================================================================
+         1. DATOS ESTRUCTURADOS DE ENLACES OFICIALES (MÓDULO 17 COMPLETO)
+         ====================================================================== */
+      const OFFICIAL_LINKS = {
+        repo: [
+          { title: 'Repositorio Oficial de Nod en GitHub', url: 'https://github.com/n8n-io/nod' },
+          { title: 'Historial de Versiones y Lanzamientos (Releases)', url: 'https://github.com/n8n-io/nod/releases' },
+          { title: 'Texto de la Licencia Apache 2.0', url: 'https://github.com/n8n-io/nod/blob/main/LICENSE' },
+          { title: 'Guía de Contribución al Código (CONTRIBUTING)', url: 'https://github.com/n8n-io/nod/blob/main/CONTRIBUTING.md' },
+          { title: 'Política de Seguridad y Reporte de Vulnerabilidades', url: 'https://github.com/n8n-io/nod/blob/main/SECURITY.md' }
+        ],
+        docs: [
+          { title: 'Portal Principal del Proyecto', url: 'https://nod.n8n.io/' },
+          { title: 'Guía de Instalación de la Aplicación de Escritorio', url: 'https://nod.n8n.io/docs/get-started/install-desktop/' },
+          { title: 'Descarga Directa para macOS (Procesadores Intel)', url: 'https://github.com/n8n-io/nod/releases/latest/download/nod-x64.dmg' },
+          { title: 'Instalación en Distribuciones Linux (Flatpak / x64)', url: 'https://nod.n8n.io/docs/get-started/install-desktop/#linux' },
+          { title: 'Instrucciones para Instalar desde Código Fuente', url: 'https://nod.n8n.io/docs/get-started/install-from-source/' },
+          { title: 'Conexión y Configuración de Modelos de IA', url: 'https://nod.n8n.io/docs/connect/models/' },
+          { title: 'Conexión de Aplicaciones y Servicios', url: 'https://nod.n8n.io/docs/connect/apps/' },
+          { title: 'Gestión de Tareas Programadas (Schedules)', url: 'https://nod.n8n.io/docs/use/schedules/' },
+          { title: 'Monitorización de Gasto y Límites Presupuestarios', url: 'https://nod.n8n.io/docs/use/spending/' },
+          { title: 'Guía de Despliegue en Equipo Dedicado (Mac mini)', url: 'https://nod.n8n.io/docs/deploy/mac-mini/' },
+          { title: 'Guía de Autoalojamiento en Servidor (Self-Hosting)', url: 'https://nod.n8n.io/docs/deploy/self-host/' }
+        ],
+        security: [
+          { title: 'Arquitectura General del Sistema', url: 'https://nod.n8n.io/docs/how-it-works/architecture/' },
+          { title: 'Especificaciones del Runtime del Agente', url: 'https://nod.n8n.io/docs/how-it-works/agent-runtime/' },
+          { title: 'Repositorio del Motor de Agente Pi (Earendil Works)', url: 'https://github.com/earendil-works/pi' },
+          { title: 'Funcionamiento Detallado de la Memoria', url: 'https://nod.n8n.io/docs/how-it-works/memory/' },
+          { title: 'Modelo de Seguridad y Ejecución Aislada', url: 'https://nod.n8n.io/docs/trust/security-model/' },
+          { title: 'Filosofía y Políticas de Confianza (Trust)', url: 'https://nod.n8n.io/docs/trust/' },
+          { title: 'Tratamiento, Almacenamiento y Privacidad de Datos', url: 'https://nod.n8n.io/docs/trust/privacy/' },
+          { title: 'Metodología de Benchmarks y Rendimiento', url: 'https://nod.n8n.io/docs/how-it-works/benchmarks/' },
+          { title: 'Instrucciones para Ejecución de Pruebas de Evaluación (Evals)', url: 'https://nod.n8n.io/docs/contribute/evals/' }
+        ],
+        community: [
+          { title: 'Portal Oficial de la Plataforma n8n', url: 'https://n8n.io/' },
+          { title: 'Construcción de Nuevos Conectores (MCP / APIs)', url: 'https://nod.n8n.io/docs/contribute/apps/' },
+          { title: 'Directorio de Conectores Creados por la Comunidad', url: 'https://nod.n8n.io/docs/connect/community-apps/' },
+          { title: 'Foro Oficial de Soporte (n8n Labs)', url: 'https://community.n8n.io/c/n8n-labs/48' },
+          { title: 'Comunidad Oficial en Discord', url: 'https://discord.gg/n8n' },
+          { title: 'Vídeo Demostrativo y Tutorial Práctico (Julio Barroeta | IA & Ciber)', url: 'https://youtube.com/watch?v=G-hGFjnrUdI&is=oy99gDIT4xJJfsa2' }
+        ]
+      };
+
+      /* ======================================================================
+         2. UTILIDADES SEGURAS DE ALMACENAMIENTO Y NOTIFICACIONES
+         ====================================================================== */
+      const SafeStorage = {
+        get(key, fallback) {
+          try {
+            const raw = window.localStorage.getItem(key);
+            return raw !== null ? JSON.parse(raw) : fallback;
+          } catch (error) {
+            return fallback;
+          }
+        },
+        set(key, value) {
+          try {
+            window.localStorage.setItem(key, JSON.stringify(value));
+          } catch (error) {
+            /* Silencioso si localStorage está restringido en iframe o modo privado */
+          }
+        }
+      };
+
+      let toastTimer = null;
+      function showToast(message) {
+        const toastEl = document.getElementById('toast-notification');
+        if (!toastEl) return;
+        toastEl.textContent = message;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toastEl.classList.remove('show');
+        }, 2800);
+      }
+
+      /* ======================================================================
+         3. GESTIÓN DE PLANTILLAS SVG (LOGO DE MARCA Y HERO ANIMADO ÚNICO)
+         ====================================================================== */
+      let heroSvgTemplateString = '';
+
+      function initBrandLogos() {
+        const logoTpl = document.getElementById('brand-logo-template');
+        if (!logoTpl) return;
+        const markup = logoTpl.innerHTML.trim();
+        const slots = ['navbar-logo-slot', 'hero-title-logo-slot'];
+        slots.forEach((slotId, index) => {
+          const el = document.getElementById(slotId);
+          if (el) {
+            el.innerHTML = markup
+              .replace(/shieldGradLogo/g, `shieldGradLogo_${index}`)
+              .replace(/textGradLogo/g, `textGradLogo_${index}`);
+          }
+        });
+        logoTpl.remove();
+      }
+
+      function initMasterHeroSvgTemplate() {
+        const masterTpl = document.getElementById('hero-svg-master-template');
+        if (masterTpl) {
+          heroSvgTemplateString = masterTpl.innerHTML.trim();
+          masterTpl.remove();
+        }
+      }
+
+      function mountHeroSvgInstance(containerId, uidPrefix) {
+        const container = document.getElementById(containerId);
+        if (!container || !heroSvgTemplateString) return;
+        const uniqueSvgMarkup = heroSvgTemplateString.replace(/__UID__/g, uidPrefix);
+        container.innerHTML = uniqueSvgMarkup;
+
+        /* Respaldo data: URI si por alguna restricción del entorno el SVG inline no renderiza */
+        const svgElement = container.querySelector('svg');
+        if (!svgElement || svgElement.getBoundingClientRect().width === 0) {
+          try {
+            const encoded = encodeURIComponent(uniqueSvgMarkup);
+            container.innerHTML = `<img src="data:image/svg+xml;charset=utf-8,${encoded}" alt="Ilustración vectorial Nod" style="width:100%;height:100%;object-fit:contain;">`;
+          } catch (err) {
+            /* Mantiene fallback limpio */
+          }
+        }
+      }
+
+      function verifyVisibleHeroSvgs() {
+        const activeTab = document.querySelector('.tab-section.active');
+        if (!activeTab) return;
+        const slot = activeTab.querySelector('.svg-hero-slot');
+        if (slot && slot.innerHTML.trim() === '') {
+          const uid = slot.id === 'svg-hero-creditos' ? 'hero_cred_repair' : 'hero_ini_repair';
+          mountHeroSvgInstance(slot.id, uid);
+        }
+      }
+
+      /* ======================================================================
+         4. RENDERIZADO DE ENLACES OFICIALES CON BOTÓN "ABRIR ENLACE EN NUEVA VENTANA"
+         ====================================================================== */
+      function renderOfficialLinks() {
+        const groupMap = {
+          repo: 'links-group-repo',
+          docs: 'links-group-docs',
+          security: 'links-group-security',
+          community: 'links-group-community'
+        };
+
+        Object.entries(groupMap).forEach(([key, containerId]) => {
+          const container = document.getElementById(containerId);
+          if (!container) return;
+          const items = OFFICIAL_LINKS[key] || [];
+          container.innerHTML = items.map((item, idx) => {
+            const urlSpanId = `url_item_${key}_${idx}`;
+            return `
+              <div class="source-link-card">
+                <div class="source-link-info">
+                  <span class="source-link-title">${item.title}</span>
+                  <span class="source-link-url" id="${urlSpanId}">${item.url}</span>
+                </div>
+                <div class="source-link-actions">
+                  <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="btn-open-new-tab">Abrir enlace en nueva ventana ↗</a>
+                  <button type="button" class="copy-btn" data-copy-target="${urlSpanId}">📋 Copiar URL</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        });
+      }
+
+      /* ======================================================================
+         5. NAVEGACIÓN SPA POR PESTAÑAS E ÍNDICE LATERAL (MENÚ SÁNDWICH)
+         ====================================================================== */
+      const sections = Array.from(document.querySelectorAll('.tab-section'));
+      const navChips = Array.from(document.querySelectorAll('#top-navbar .chip[data-tab-target]'));
+      const drawerEl = document.getElementById('dr');
+      const drawerBackdrop = document.getElementById('drawer-backdrop');
+      const menuBtn = document.getElementById('mb');
+      const drawerLinksContainer = document.getElementById('drawer-links-container');
+      let currentTabIndex = 0;
+
+      function toggleDrawer(forceState) {
+        const isOpen = typeof forceState === 'boolean'
+          ? forceState
+          : !drawerEl.classList.contains('o');
+        drawerEl.classList.toggle('o', isOpen);
+        drawerBackdrop.classList.toggle('visible', isOpen);
+        menuBtn.setAttribute('aria-expanded', String(isOpen));
+      }
+
+      function goToTab(targetIndex) {
+        const safeIndex = Math.max(0, Math.min(sections.length - 1, Number(targetIndex)));
+        currentTabIndex = safeIndex;
+
+        sections.forEach((sec, idx) => {
+          sec.classList.toggle('active', idx === safeIndex);
+        });
+
+        navChips.forEach((chip) => {
+          const chipIdx = Number(chip.dataset.tabTarget);
+          chip.classList.toggle('active', chipIdx === safeIndex);
+          if (chipIdx === safeIndex) {
+            chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          }
+        });
+
+        const drawerAnchors = Array.from(drawerLinksContainer.querySelectorAll('a'));
+        drawerAnchors.forEach((anchor, idx) => {
+          anchor.classList.toggle('on', idx === safeIndex);
+        });
+
+        if (safeIndex === 0) {
+          mountHeroSvgInstance('svg-hero-inicio', 'hero_inicio_instance');
+        } else if (safeIndex === 11) {
+          mountHeroSvgInstance('svg-hero-creditos', 'hero_creditos_instance');
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        updateReadingProgress();
+        SafeStorage.set('nod_tutorial_active_tab', safeIndex);
+      }
+
+      function buildDynamicDrawerIndex() {
+        drawerLinksContainer.innerHTML = '';
+        sections.forEach((sec, idx) => {
+          const link = document.createElement('a');
+          const title = sec.dataset.t || (sec.querySelector('h2') ? sec.querySelector('h2').textContent : `Sección ${idx}`);
+          link.textContent = (idx > 0 ? `${idx}. ` : '') + title;
+          link.setAttribute('role', 'button');
+          link.setAttribute('tabindex', '0');
+          link.addEventListener('click', () => {
+            goToTab(idx);
+            toggleDrawer(false);
+          });
+          link.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              goToTab(idx);
+              toggleDrawer(false);
+            }
+          });
+          drawerLinksContainer.appendChild(link);
+        });
+      }
+
+      /* ======================================================================
+         6. COPIA AL PORTAPAPELES ROBUSTA (CON FALLBACK EXEC_COMMAND)
+         ====================================================================== */
+      function copyTextToClipboard(textToCopy, buttonEl) {
+        if (!textToCopy) return;
+        const cleanText = textToCopy.trim();
+
+        const onSuccess = () => {
+          showToast('✓ Copiado al portapapeles');
+          if (buttonEl) {
+            const originalLabel = buttonEl.textContent;
+            buttonEl.textContent = '✓ ¡Copiado!';
+            setTimeout(() => {
+              buttonEl.textContent = originalLabel;
+            }, 1800);
+          }
+        };
+
+        const fallbackCopy = () => {
+          try {
+            const textArea = document.createElement('textarea');
+            textArea.value = cleanText;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            if (ok) {
+              onSuccess();
+            } else {
+              showToast('No se pudo copiar automáticamente. Selecciona el texto y pulsa Ctrl+C.');
+            }
+          } catch (err) {
+            showToast('Selecciona el bloque manualmente y usa Ctrl+C / Cmd+C.');
+          }
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(cleanText).then(onSuccess).catch(fallbackCopy);
+        } else {
+          fallbackCopy();
+        }
+      }
+
+      /* ======================================================================
+         7. BUSCADOR INTERNO EN TIEMPO REAL
+         ====================================================================== */
+      function initSearchEngine() {
+        const input = document.getElementById('global-search-input');
+        const clearBtn = document.getElementById('clear-search-btn');
+        const resultsPanel = document.getElementById('search-results-panel');
+
+        function performSearch() {
+          const query = input.value.trim().toLowerCase();
+          clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+
+          if (query.length < 2) {
+            resultsPanel.style.display = 'none';
+            resultsPanel.innerHTML = '';
+            return;
+          }
+
+          const matches = [];
+          sections.forEach((sec, tabIdx) => {
+            const tabTitle = sec.dataset.t || `Pestaña ${tabIdx}`;
+            const blocks = sec.querySelectorAll('h2, h3, h4, p, li, summary, td, .prompt-text');
+            blocks.forEach((block) => {
+              const text = block.textContent.trim();
+              if (text.toLowerCase().includes(query) && matches.length < 25) {
+                const snippet = text.length > 130 ? text.slice(0, 130) + '...' : text;
+                matches.push({ tabIdx, tabTitle, snippet });
+              }
+            });
+          });
+
+          resultsPanel.style.display = 'block';
+          if (matches.length === 0) {
+            resultsPanel.innerHTML = '<div style="padding:8px; color:var(--text-secondary);">No se encontraron coincidencias exactas para tu búsqueda.</div>';
+            return;
+          }
+
+          resultsPanel.innerHTML = matches.map((m) => `
+            <div class="search-result-item" data-jump-tab="${m.tabIdx}">
+              <div class="search-result-tab">Pestaña: ${m.tabTitle}</div>
+              <div style="font-size:0.86rem; margin-top:2px;">${m.snippet}</div>
+            </div>
+          `).join('');
+
+          resultsPanel.querySelectorAll('.search-result-item').forEach((item) => {
+            item.addEventListener('click', () => {
+              const targetTab = Number(item.dataset.jumpTab);
+              goToTab(targetTab);
+              resultsPanel.style.display = 'none';
+            });
+          });
+        }
+
+        input.addEventListener('input', performSearch);
+        clearBtn.addEventListener('click', () => {
+          input.value = '';
+          performSearch();
+          input.focus();
+        });
+      }
+
+      /* ======================================================================
+         8. BOTONES FLOTANTES MOVIBLES (ARRASTRABLES TÁCTIL + RATÓN)
+         ====================================================================== */
+      function makeFloatingButtonDraggable(buttonEl, onClickCallback) {
+        if (!buttonEl) return;
+        let isDragging = false;
+        let hasMoved = false;
+        let startX = 0;
+        let startY = 0;
+        let initialLeft = 0;
+        let initialTop = 0;
+
+        const onPointerDown = (e) => {
+          isDragging = true;
+          hasMoved = false;
+          const rect = buttonEl.getBoundingClientRect();
+          initialLeft = rect.left;
+          initialTop = rect.top;
+          startX = e.clientX;
+          startY = e.clientY;
+          buttonEl.style.right = 'auto';
+          buttonEl.style.bottom = 'auto';
+          buttonEl.style.left = `${initialLeft}px`;
+          buttonEl.style.top = `${initialTop}px`;
+          if (buttonEl.setPointerCapture) {
+            buttonEl.setPointerCapture(e.pointerId);
+          }
+        };
+
+        const onPointerMove = (e) => {
+          if (!isDragging) return;
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            hasMoved = true;
+          }
+          const maxLeft = window.innerWidth - buttonEl.offsetWidth - 8;
+          const maxTop = window.innerHeight - buttonEl.offsetHeight - 8;
+          const nextLeft = Math.max(8, Math.min(maxLeft, initialLeft + dx));
+          const nextTop = Math.max(66, Math.min(maxTop, initialTop + dy));
+          buttonEl.style.left = `${nextLeft}px`;
+          buttonEl.style.top = `${nextTop}px`;
+        };
+
+        const onPointerUp = (e) => {
+          if (!isDragging) return;
+          isDragging = false;
+          if (buttonEl.releasePointerCapture) {
+            try { buttonEl.releasePointerCapture(e.pointerId); } catch (err) {}
+          }
+          if (!hasMoved) {
+            onClickCallback();
+          }
+        };
+
+        buttonEl.addEventListener('pointerdown', onPointerDown);
+        buttonEl.addEventListener('pointermove', onPointerMove);
+        buttonEl.addEventListener('pointerup', onPointerUp);
+      }
+
+      /* ======================================================================
+         9. IMPRESIÓN / EXPORTACIÓN PDF PREPARANDO TODOS LOS SVG Y ACORDEONES
+         ====================================================================== */
+      function triggerSafePrint() {
+        const closedDetails = Array.from(document.querySelectorAll('details.qa-item:not([open])'));
+        try {
+          mountHeroSvgInstance('svg-hero-inicio', 'hero_inicio_print');
+          mountHeroSvgInstance('svg-hero-creditos', 'hero_creditos_print');
+          closedDetails.forEach((d) => d.setAttribute('open', ''));
+
+          const restoreAfterPrint = () => {
+            closedDetails.forEach((d) => d.removeAttribute('open'));
+            window.removeEventListener('afterprint', restoreAfterPrint);
+          };
+          window.addEventListener('afterprint', restoreAfterPrint);
+
+          window.print();
+        } catch (err) {
+          closedDetails.forEach((d) => d.removeAttribute('open'));
+          showToast('Abre este archivo directamente en el navegador y utiliza Ctrl+P o Cmd+P');
+        }
+      }
+
+      /* ======================================================================
+         10. BARRA DE PROGRESO DE LECTURA Y PREFERENCIAS DE USUARIO
+         ====================================================================== */
+      function updateReadingProgress() {
+        const bar = document.getElementById('reading-progress-bar');
+        if (!bar) return;
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const percent = docHeight > 0 ? Math.min(100, Math.round((scrollTop / docHeight) * 100)) : 100;
+        bar.style.width = `${percent}%`;
+      }
+
+      function initPreferencesAndChecklist() {
+        let fontSize = SafeStorage.get('nod_font_size', 16);
+        document.documentElement.style.setProperty('--base-font-size', `${fontSize}px`);
+
+        document.getElementById('btn-font-dec').addEventListener('click', () => {
+          fontSize = Math.max(13, fontSize - 1);
+          document.documentElement.style.setProperty('--base-font-size', `${fontSize}px`);
+          SafeStorage.set('nod_font_size', fontSize);
+          showToast(`Tamaño de letra: ${fontSize}px`);
+        });
+
+        document.getElementById('btn-font-inc').addEventListener('click', () => {
+          fontSize = Math.min(22, fontSize + 1);
+          document.documentElement.style.setProperty('--base-font-size', `${fontSize}px`);
+          SafeStorage.set('nod_font_size', fontSize);
+          showToast(`Tamaño de letra: ${fontSize}px`);
+        });
+
+        const themeBtn = document.getElementById('btn-theme-toggle');
+        const savedTheme = SafeStorage.get('nod_theme', 'dark');
+        if (savedTheme === 'light') {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+          themeBtn.textContent = '🌙 Oscuro';
+        }
+
+        themeBtn.addEventListener('click', () => {
+          const isLight = document.documentElement.classList.toggle('light');
+          document.documentElement.classList.toggle('dark', !isLight);
+          themeBtn.textContent = isLight ? '🌙 Oscuro' : '☀️ Claro';
+          SafeStorage.set('nod_theme', isLight ? 'light' : 'dark');
+        });
+
+        const savedChecks = SafeStorage.get('nod_checklist', {});
+        document.querySelectorAll('#onboarding-checklist input[type="checkbox"]').forEach((checkbox) => {
+          const id = checkbox.dataset.checkId;
+          if (savedChecks[id]) {
+            checkbox.checked = true;
+            checkbox.closest('.checklist-item').classList.add('checked');
+          }
+          checkbox.addEventListener('change', () => {
+            savedChecks[id] = checkbox.checked;
+            checkbox.closest('.checklist-item').classList.toggle('checked', checkbox.checked);
+            SafeStorage.set('nod_checklist', savedChecks);
+          });
+        });
+      }
+
+      /* ======================================================================
+         11. INICIALIZACIÓN GLOBAL DEL TUTORIAL
+         ====================================================================== */
+      document.addEventListener('DOMContentLoaded', () => {
+        initBrandLogos();
+        initMasterHeroSvgTemplate();
+        renderOfficialLinks();
+        buildDynamicDrawerIndex();
+        initSearchEngine();
+        initPreferencesAndChecklist();
+
+        /* Eventos de pestañas superiores y botones Anterior / Siguiente */
+        navChips.forEach((chip) => {
+          chip.addEventListener('click', () => goToTab(Number(chip.dataset.tabTarget)));
+        });
+
+        document.querySelectorAll('[data-nav-step]').forEach((btn) => {
+          btn.addEventListener('click', () => goToTab(Number(btn.dataset.navStep)));
+        });
+
+        /* Eventos del índice lateral (Menú sándwich + botón de Inicio) */
+        menuBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleDrawer();
+        });
+
+        const homeIndexBtn = document.getElementById('ix');
+        if (homeIndexBtn) {
+          homeIndexBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDrawer(true);
+          });
+        }
+
+        drawerBackdrop.addEventListener('click', () => toggleDrawer(false));
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            toggleDrawer(false);
+          }
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('#dr, #mb, #ix')) {
+            toggleDrawer(false);
+          }
+        });
+
+        /* Botones de Q&A: Desplegar / Plegar todas las respuestas */
+        const qaDetails = Array.from(document.querySelectorAll('details.qa-item'));
+        qaDetails.forEach((d) => d.removeAttribute('open'));
+
+        document.getElementById('btn-qa-expand-all').addEventListener('click', () => {
+          qaDetails.forEach((d) => d.setAttribute('open', ''));
+          showToast('Todas las respuestas desplegadas');
+        });
+
+        document.getElementById('btn-qa-collapse-all').addEventListener('click', () => {
+          qaDetails.forEach((d) => d.removeAttribute('open'));
+          showToast('Todas las respuestas plegadas');
+        });
+
+        /* Delegación global de botones COPIAR */
+        document.body.addEventListener('click', (e) => {
+          const copyBtn = e.target.closest('.copy-btn[data-copy-target]');
+          if (copyBtn) {
+            const targetId = copyBtn.dataset.copyTarget;
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+              copyTextToClipboard(targetEl.textContent, copyBtn);
+            }
+          }
+
+          const pauseBtn = e.target.closest('.svg-pause-toggle');
+          if (pauseBtn) {
+            const slotEl = document.getElementById(pauseBtn.dataset.target);
+            if (slotEl) {
+              const paused = slotEl.classList.toggle('svg-paused');
+              pauseBtn.textContent = paused ? '▶ Reanudar animación' : '⏸ Pausar animación';
+            }
+          }
+        });
+
+        /* Botón de impresión PDF */
+        document.getElementById('btn-print-pdf').addEventListener('click', triggerSafePrint);
+
+        /* Botones flotantes movibles: Inicio y Arriba */
+        makeFloatingButtonDraggable(document.getElementById('fab-go-home'), () => {
+          goToTab(0);
+          showToast('Has vuelto a Inicio');
+        });
+
+        makeFloatingButtonDraggable(document.getElementById('fab-scroll-top'), () => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        /* Seguimiento de scroll y reparación periódica del SVG visible */
+        window.addEventListener('scroll', updateReadingProgress, { passive: true });
+        setInterval(verifyVisibleHeroSvgs, 2500);
+
+        /* Arranque en la pestaña Inicio (0) con SVG montado */
+        goToTab(0);
+      });
+    })();
+  </script>
+</body>
+</html>
